@@ -1,0 +1,1770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ELO Productivity Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#0a0a0f;color:#e2e8f0;font-family:'Rajdhani',sans-serif}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+@keyframes pulse-glow{0%,100%{opacity:.5}50%{opacity:1}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes promo-pulse{0%,100%{box-shadow:0 0 0 0 gold}50%{box-shadow:0 0 24px 6px gold}}
+.shake{animation:shake .5s ease}
+#app{display:flex;height:100vh;width:100vw;overflow:hidden}
+#left{width:270px;flex-shrink:0;display:flex;flex-direction:column;position:relative;overflow:hidden;transition:background .6s}
+#left-glow{position:absolute;inset:0;pointer-events:none;transition:background .6s;z-index:0}
+#left-content{position:relative;z-index:1;display:flex;flex-direction:column;height:100%}
+#rank-section{padding:18px 14px 10px;display:flex;flex-direction:column;align-items:center;gap:8px}
+#rank-icon{font-size:48px;transition:filter .5s;line-height:1}
+#rank-name{font-size:20px;font-weight:700;letter-spacing:4px;text-transform:uppercase;transition:color .5s}
+#rank-tier{font-size:13px;letter-spacing:2px;transition:color .5s}
+#lp-area{width:100%;padding:0 8px}
+#lp-row{display:flex;justify-content:space-between;font-size:11px;color:#64748b;margin-bottom:3px;font-family:'Share Tech Mono',monospace}
+#lp-track{height:5px;background:#ffffff0a;border-radius:3px;overflow:hidden}
+#lp-fill{height:100%;border-radius:3px;transition:width .5s ease,background .5s,box-shadow .5s}
+#promo-banner{display:none;margin:6px 8px 0;padding:7px 10px;border-radius:6px;border:1px solid gold;background:#1a1500;text-align:center;font-size:11px;letter-spacing:2px;color:gold;animation:promo-pulse 2s ease infinite;text-transform:uppercase}
+#pos-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px 4px;font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:2px}
+#my-pos{font-family:'Share Tech Mono',monospace;font-size:18px;font-weight:700;transition:color .5s}
+#ladder-nav{display:flex;align-items:center;padding:4px 8px;gap:6px;border-top:1px solid #1a1a2e;border-bottom:1px solid #1a1a2e}
+#ladder-nav button{background:transparent;border:1px solid #333;color:#94a3b8;font-family:'Rajdhani',sans-serif;font-size:11px;letter-spacing:1px;padding:3px 8px;border-radius:4px;cursor:pointer;transition:all .2s;flex-shrink:0}
+#ladder-nav button:hover{border-color:#555;color:#e2e8f0}
+#ladder-tier-label{flex:1;text-align:center;font-size:11px;letter-spacing:2px;color:#64748b;text-transform:uppercase;font-family:'Share Tech Mono',monospace}
+#ladder-list{flex:1;overflow-y:auto;padding:4px 6px}
+.lrow{display:flex;align-items:center;padding:3px 7px;margin-bottom:1px;border-radius:5px;font-size:11px;font-family:'Share Tech Mono',monospace;border:1px solid transparent;transition:all .2s}
+.lrow.me{border-style:solid}
+.lpos{width:26px;opacity:.6;font-size:10px;flex-shrink:0}
+.lflag{width:16px;flex-shrink:0;font-size:12px;line-height:1}
+.lname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px}
+.llp{font-size:10px;opacity:.8;min-width:44px;text-align:right;flex-shrink:0}
+#right{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#pomo-panel{flex:1;display:flex;flex-direction:column;background:#0d0d14;position:relative;overflow:hidden;border-bottom:1px solid #1a1a2e}
+#pomo-glow{position:absolute;inset:0;pointer-events:none;transition:background .6s}
+.panel-hdr{padding:8px 16px;display:flex;align-items:center;gap:8px;position:relative;z-index:1;border-bottom:1px solid #1a1a2e;flex-shrink:0}
+.panel-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.panel-lbl{font-size:10px;letter-spacing:4px;color:#475569;text-transform:uppercase}
+#pomo-status-lbl{margin-left:auto;font-size:10px;letter-spacing:2px;font-family:'Share Tech Mono',monospace}
+#pomo-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;position:relative;z-index:1;padding:12px}
+#pomo-svg-wrap{position:relative;flex-shrink:0}
+#pomo-svg{display:block}
+#pomo-time-display{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px}
+#pomo-time{font-family:'Share Tech Mono',monospace;font-weight:700;transition:color .5s;letter-spacing:2px}
+#pomo-session-sub{font-size:11px;color:#64748b;letter-spacing:3px;text-transform:uppercase;text-align:center}
+#pomo-btns{display:flex;gap:10px}
+.pomo-btn{padding:9px 24px;border-radius:6px;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:2px;transition:all .2s;text-transform:uppercase}
+#btn-start{border:1px solid transparent;transition:background .3s,border-color .5s,color .5s}
+#mission-wrap{display:none;flex-direction:column;align-items:center;gap:10px;animation:rise .5s ease}
+#mission-icon{font-size:40px}
+#mission-title{font-size:24px;font-weight:700;letter-spacing:3px;text-transform:uppercase;transition:color .5s}
+#mission-lp{font-size:14px;transition:color .5s;letter-spacing:1px}
+#btn-new{padding:8px 22px;border:none;border-radius:6px;color:#fff;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:2px;transition:background .5s;text-transform:uppercase}
+#promo-overlay{display:none;flex-direction:column;align-items:center;gap:10px;animation:rise .5s ease}
+#promo-title{font-size:22px;font-weight:700;letter-spacing:3px;color:gold;text-transform:uppercase}
+#promo-sub{font-size:13px;color:#92400e;letter-spacing:2px}
+#relapse-panel{height:220px;background:#0a0008;position:relative;overflow:hidden;flex-shrink:0}
+#relapse-glow{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 120%,#ef444410,transparent 65%);pointer-events:none}
+#relapse-body{display:flex;align-items:center;height:100%;position:relative;z-index:1}
+#relapse-left{padding:12px 16px;display:flex;flex-direction:column;justify-content:center;gap:4px;flex-shrink:0;min-width:110px;border-right:1px solid #3f0000}
+#relapse-eye{font-size:9px;letter-spacing:6px;color:#ef4444;text-transform:uppercase;margin-bottom:4px}
+#relapse-title{font-size:19px;font-weight:700;letter-spacing:4px;color:#f87171;line-height:1}
+#relapse-msg{font-size:10px;font-family:'Share Tech Mono',monospace;color:#ef4444;margin-top:6px;min-height:14px}
+#relapse-right{flex:1;padding:12px 14px;display:flex;flex-direction:column;gap:8px;justify-content:center}
+.relapse-btn{width:100%;padding:11px 10px;border-radius:7px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;cursor:pointer;letter-spacing:1px;text-transform:uppercase;text-align:left;transition:opacity .2s;line-height:1.3}
+#btn-distracted{background:#1a0a00;border:1px solid #92400e;color:#fbbf24}
+#btn-distracted:hover{opacity:.8}
+#flash{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateX(135px);z-index:999;padding:9px 28px;border-radius:7px;font-size:15px;font-weight:700;letter-spacing:3px;animation:rise .3s ease;pointer-events:none;display:none;white-space:nowrap;text-transform:uppercase}
+#gm-lp-area{display:none;width:100%;padding:0 8px;margin-top:4px}
+#gm-lp-track{height:3px;background:#ffffff0a;border-radius:2px;overflow:hidden}
+#gm-lp-fill{height:100%;background:linear-gradient(90deg,#a855f7,#ef4444);transition:width .5s ease}
+#gm-lp-label{font-size:10px;color:#64748b;letter-spacing:1px;font-family:'Share Tech Mono',monospace;margin-bottom:3px}
+
+
+@keyframes timer-hype{0%,100%{transform:scale(1)}15%{transform:scale(1.06)}30%{transform:scale(.96)}45%{transform:scale(1.04)}60%{transform:scale(.98)}75%{transform:scale(1.03)}}
+.timer-shaking{animation:timer-hype .5s ease infinite}
+@keyframes shield-shake{0%,100%{transform:translate(0,0) rotate(0)}20%{transform:translate(-4px,0) rotate(-2deg)}40%{transform:translate(4px,0) rotate(2deg)}60%{transform:translate(-3px,0) rotate(-1deg)}80%{transform:translate(3px,0) rotate(1deg)}}
+@keyframes shield-shrink{0%{transform:scale(1);opacity:1}100%{transform:scale(0);opacity:0}}
+@keyframes shield-grow{0%{transform:scale(2.5);opacity:0}60%{transform:scale(0.9);opacity:1}100%{transform:scale(1);opacity:1}}
+.shield-shaking{animation:shield-shake 0.4s ease infinite}
+.shield-shrink{animation:shield-shrink 0.4s ease forwards}
+.shield-grow{animation:shield-grow 0.6s cubic-bezier(.17,.67,.35,1.3) forwards}
+#challenger-ticker{position:fixed;top:0;left:270px;right:0;z-index:1000;background:#0a0600;border-bottom:1px solid #b45309;height:28px;overflow:hidden;display:none;align-items:center}
+#challenger-ticker-inner{display:inline-block;white-space:nowrap;font-family:"Share Tech Mono",monospace;font-size:11px;font-weight:700;letter-spacing:3px;color:#f59e0b;text-transform:uppercase;padding-left:100%}
+@keyframes ticker-scroll{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
+#identity-panel{flex:1;background:#050508;border-right:1px solid #1a1a2e;display:flex;flex-direction:column;justify-content:center;padding:14px 16px;gap:8px;position:relative;overflow:hidden;transition:background .5s,border-color .5s}
+#identity-car-bg{position:absolute;top:-10%;right:-5%;width:85%;height:120%;object-fit:cover;object-position:center;opacity:0;transition:opacity .5s ease;mask-image:linear-gradient(to left,rgba(0,0,0,0.5) 0%,rgba(0,0,0,0.25) 50%,transparent 100%);-webkit-mask-image:linear-gradient(to left,rgba(0,0,0,0.5) 0%,rgba(0,0,0,0.25) 50%,transparent 100%);pointer-events:none}
+#identity-panel::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,var(--id-glow,#7e22ce18),transparent 70%);pointer-events:none;z-index:1}
+#identity-tier-label{font-size:9px;letter-spacing:5px;color:var(--id-dim,#6b21a8);text-transform:uppercase;font-family:'Share Tech Mono',monospace;position:relative;z-index:2}
+#identity-title{font-size:20px;font-weight:700;letter-spacing:3px;color:var(--id-text,#e9d5ff);text-transform:uppercase;line-height:1;transition:color .4s;position:relative;z-index:2}
+#identity-phrase{font-size:10px;color:var(--id-accent,#7e22ce);letter-spacing:1px;font-family:'Share Tech Mono',monospace;line-height:1.5;min-height:28px;position:relative;z-index:2}
+#identity-progress-wrap{margin-top:2px;position:relative;z-index:2}
+#identity-progress-label{display:flex;justify-content:space-between;font-size:9px;color:var(--id-dim,#4c1d95);font-family:'Share Tech Mono',monospace;margin-bottom:3px;letter-spacing:1px}
+#identity-bar-track{height:3px;background:#ffffff08;border-radius:2px;overflow:hidden}
+#identity-bar-fill{height:100%;background:linear-gradient(90deg,var(--id-dim,#6d28d9),var(--id-accent,#a855f7));border-radius:2px;transition:width .5s ease}
+#identity-max{font-size:11px;letter-spacing:3px;color:#a855f7;font-family:'Share Tech Mono',monospace;text-align:center;animation:pulse-glow 2s ease infinite}
+
+</style>
+</head>
+<body>
+<div id="flash"></div>
+<div id="challenger-ticker"><span id="challenger-ticker-inner"></span></div>
+<div id="app">
+  <div id="left">
+    <div id="left-glow"></div>
+    <div id="left-content">
+      <div id="rank-section">
+        <img id="rank-icon" src="iron.png" alt="rank" style="width:72px;height:72px;object-fit:contain;filter:drop-shadow(0 0 18px #334155);transition:filter .5s;animation:pulse-glow 2.5s ease infinite"/>
+        <div id="rank-name">Iron</div>
+        <div id="rank-tier">Division III</div>
+        <div id="lp-area">
+          <div id="lp-row"><span>0 LP</span><span id="lp-val" style="font-weight:700">0 LP</span><span>100 LP</span></div>
+          <div id="lp-track"><div id="lp-fill"></div></div>
+        </div>
+        <div id="gm-lp-area">
+          <div id="gm-lp-label">Total LP: <span id="gm-lp-num">0</span></div>
+          <div id="gm-lp-track"><div id="gm-lp-fill"></div></div>
+        </div>
+        <div id="promo-banner">🔥 PROMOTION SERIES</div>
+      </div>
+      <div id="streak-row" style="display:flex;align-items:center;justify-content:center;padding:4px 12px;gap:6px">
+        <span id="streak-display" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#475569;letter-spacing:2px"></span>
+      </div>
+      <div id="pos-row">
+        <span style="font-size:10px">Position</span>
+        <span id="my-pos">#1</span>
+      </div>
+      <div id="ladder-nav">
+        <button id="btn-nav-prev">◀</button>
+        <span id="ladder-tier-label">Iron III</span>
+        <button id="btn-nav-next">▶</button>
+        <button id="btn-nav-me" style="font-size:10px;padding:3px 6px">ME</button>
+        <button id="btn-cal" onclick="toggleCalendar()" style="font-size:11px;padding:3px 7px" title="Calendar">📅</button>
+      </div>
+      <div id="ladder-list"></div>
+      <!-- CALENDAR OVERLAY -->
+      <div id="cal-overlay" style="display:none;position:absolute;inset:0;background:#0a0a0f;z-index:10;padding:12px;padding-top:32px;overflow-y:auto">
+        <button onclick="toggleCalendar()" style="position:absolute;top:8px;right:8px;background:transparent;border:none;color:#475569;font-size:16px;cursor:pointer;line-height:1">✕</button>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <button onclick="calPrev()" style="background:transparent;border:1px solid #333;color:#94a3b8;font-family:'Rajdhani',sans-serif;font-size:12px;padding:3px 8px;border-radius:4px;cursor:pointer">◀</button>
+          <span id="cal-month-label" style="font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:3px;color:#94a3b8;text-transform:uppercase"></span>
+          <button onclick="calNext()" style="background:transparent;border:1px solid #333;color:#94a3b8;font-family:'Rajdhani',sans-serif;font-size:12px;padding:3px 8px;border-radius:4px;cursor:pointer">▶</button>
+        </div>
+        <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center"></div>
+        <div style="margin-top:10px;font-size:10px;color:#475569;font-family:'Share Tech Mono',monospace;letter-spacing:1px;text-align:center">🔥 = 4h+ · 🐲 = 8h+</div>
+        <div style="margin-top:12px;border-top:1px solid #1a1a2e;padding-top:10px;display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;justify-content:space-between;font-size:10px;font-family:'Share Tech Mono',monospace;letter-spacing:1px">
+            <span style="color:#475569">DAILY AVG</span>
+            <span id="cal-daily-avg" style="color:#94a3b8">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="right">
+    <div id="pomo-panel">
+      <div id="pomo-glow"></div>
+      <div class="panel-hdr" style="gap:10px;flex-wrap:wrap">
+        <div class="panel-dot" id="pomo-dot"></div>
+        <span id="season-counter" style="font-size:10px;letter-spacing:3px;color:#475569;font-family:'Share Tech Mono',monospace;text-transform:uppercase"></span>
+        <span id="pomo-status-lbl" style="margin-left:auto"></span>
+
+      </div>
+<audio id="laugh-audio" src="laugh.m4a" style="display:none"></audio>
+<audio id="quote-audio" style="display:none"></audio>
+<audio id="hype-audio" src="hype.m4a" style="display:none"></audio>
+<audio id="jackpot-audio" src="jackpot.mp3" style="display:none"></audio>
+<audio id="promoted-audio" src="PROMOTED.m4a" style="display:none"></audio>
+<audio id="greed-audio" src="GREED.m4a" style="display:none"></audio>
+<audio id="hype-audio" src="hype.m4a" style="display:none"></audio>
+<audio id="jackpot-audio" src="jackpot.mp3" style="display:none"></audio>
+<audio id="promoted-audio" src="PROMOTED.m4a" style="display:none"></audio>
+<audio id="greed-audio" src="GREED.m4a" style="display:none"></audio>
+      <div id="pomo-body">
+        <div id="pomo-svg-wrap">
+          <svg id="pomo-svg" viewBox="0 0 220 220" width="220" height="220">
+            <defs>
+              <filter id="ring-glow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="3" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+            <circle id="ring-bg" cx="110" cy="110" r="96" fill="none" stroke="#ffffff08" stroke-width="8"/>
+            <circle id="ring-fg" cx="110" cy="110" r="96" fill="none" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"
+              stroke-dasharray="603.2" stroke-dashoffset="0" transform="rotate(-90 110 110)"
+              filter="url(#ring-glow)"
+              style="transition:stroke-dashoffset 1s linear,stroke .5s"/>
+          </svg>
+          <div id="pomo-time-display">
+            <div id="pomo-time" style="font-size:52px">20:00</div>
+            <div id="pomo-session-sub">Iron · 20 min</div>
+            <div id="pomo-phase-badge" style="font-size:10px;letter-spacing:3px;margin-top:4px;text-transform:uppercase;opacity:.7;color:#64748b"></div>
+          </div>
+        </div>
+        <div id="pomo-btns">
+          <button class="pomo-btn" id="btn-start">START</button>
+          <button id="btn-greed" onclick="activateGreed()" style="display:none;padding:9px 18px;border-radius:6px;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:2px;text-transform:uppercase;background:transparent;border:1px solid #f43f5e;color:#fb7185;transition:all .2s">GREED</button>
+        </div>
+        <div id="mission-wrap">
+          <div id="mission-icon">🎯</div>
+          <div id="mission-title">Mission Accomplished</div>
+          <div id="mission-lp">+25 LP granted</div>
+          <button id="btn-new">New Session</button>
+        </div>
+        <div id="promo-overlay">
+          <div id="promo-title">⚔️ PROMOTION MATCH</div>
+          <div id="promo-sub">Complete the extended session to advance!</div>
+        </div>
+      </div>
+    </div>
+    <div id="relapse-panel" style="display:flex;flex-direction:row">
+      <!-- IDENTITY PANEL (left) -->
+      <div id="identity-panel">
+        <img id="identity-car-bg" src="" alt=""/>
+        <div id="identity-tier-label" style="position:relative;z-index:2">Identity</div>
+        <div id="identity-title">Nobody</div>
+        <div id="identity-phrase">Start your streak.</div>
+        <div id="identity-progress-wrap">
+          <div id="identity-progress-label">
+            <span id="identity-pts-label">0/7</span>
+            <span id="identity-next-label"></span>
+          </div>
+          <div id="identity-bar-track"><div id="identity-bar-fill" style="width:0%"></div></div>
+        </div>
+      </div>
+      <!-- RELAPSE ZONE (right) -->
+      <div style="flex:1;display:flex;flex-direction:column;background:#0a0008;position:relative;overflow:hidden">
+        <div id="relapse-glow"></div>
+        <div class="panel-hdr" style="border-bottom:1px solid #3f0000;position:relative;z-index:1">
+          <div class="panel-dot" style="background:#ef4444;box-shadow:0 0 6px #ef4444;animation:pulse-glow 1.5s ease infinite"></div>
+          <span class="panel-lbl" style="color:#7f1d1d">Relapse Zone</span>
+          <span id="highelo-badge" style="display:none;margin-left:auto;font-size:9px;letter-spacing:2px;color:#ef4444;font-family:'Share Tech Mono',monospace">HIGH ELO ×1.3</span>
+        </div>
+        <div id="relapse-body" style="position:relative;z-index:1">
+          <div id="relapse-left">
+            <div id="relapse-eye">Danger</div>
+            <div id="relapse-title">I RELAPSED</div>
+            <div id="relapse-msg"></div>
+          </div>
+          <div id="relapse-right">
+            <button class="relapse-btn" id="btn-distracted">
+              😵 I got distracted
+            </button>
+            <button class="relapse-btn" id="btn-phone" style="background:#0a0015;border:1px solid #4c1d95;color:#a78bfa">
+              📱 I used my phone
+            </button>
+            <button class="relapse-btn" id="btn-quit" style="background:#0f0a00;border:1px solid #713f12;color:#fbbf24">
+              🏳️ I quit early
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// ══════════════════════════════════════════════
+// TIER CONFIG
+// ══════════════════════════════════════════════
+const TIER_RANKS=[
+  {id:'iron',    name:'Iron',       maxDiv:3,color:'#94a3b8',bg:'#0b0f16',accent:'#334155',glow:'#1e293b',icon:'iron.png',      timer:20,text:'#cbd5e1'},
+  {id:'bronze',  name:'Bronze',     maxDiv:3,color:'#92400e',bg:'#1a0800',accent:'#6b3000',glow:'#2a1200',icon:'bronce.png',    timer:25,text:'#d4956a'},
+  {id:'silver',  name:'Silver',     maxDiv:3,color:'#94a3b8',bg:'#0c0e13',accent:'#475569',glow:'#1e2333',icon:'silver.png',    timer:30,text:'#e2e8f0'},
+  {id:'gold',    name:'Gold',       maxDiv:3,color:'#fbbf24',bg:'#140f00',accent:'#b45309',glow:'#1f1500',icon:'gold.png',      timer:35,text:'#fef08a'},
+  {id:'platinum',name:'Platinum',   maxDiv:3,color:'#22d3ee',bg:'#001017',accent:'#0e7490',glow:'#001d26',icon:'platinum.png',  timer:40,text:'#67e8f9'},
+  {id:'emerald', name:'Emerald',    maxDiv:3,color:'#34d399',bg:'#001a0a',accent:'#047857',glow:'#002310',icon:'emerald.png',   timer:45,text:'#6ee7b7'},
+  {id:'diamond', name:'Diamond',    maxDiv:3,color:'#818cf8',bg:'#07001a',accent:'#4338ca',glow:'#0d0030',icon:'diamond.png',   timer:50,text:'#c7d2fe'},
+  {id:'master',  name:'Master',     maxDiv:3,color:'#c084fc',bg:'#0d0019',accent:'#7e22ce',glow:'#140028',icon:'master.png',    timer:55,text:'#e9d5ff'},
+  {id:'gm',      name:'Grandmaster',maxDiv:1,color:'#ef4444',bg:'#160000',accent:'#b91c1c',glow:'#200000',icon:'grand_master.png',timer:60,text:'#fca5a5',isGM:true},
+  {id:'challenger',name:'Challenger',maxDiv:1,color:'#e8d5b7',bg:'#0e0c08',accent:'#a08060',glow:'#1a1610',icon:'challenger.png', timer:65,breakMins:20,text:'#fdf6e3',isChallenger:true},
+];
+const DIV_LABELS=['III','II','I'];
+
+// ══════════════════════════════════════════════
+// FIXED PLAYER LIST (600 players from nicks.txt)
+// Distribution: 25 per division, Iron III → Master I (8 tiers × 3 divs = 24 divs × 25 = 600)
+// GM and Challenger start EMPTY
+// ══════════════════════════════════════════════
+const FIXED_PLAYERS=[
+  // Each entry: [name, flag]
+  ['Ayanokouji','🇯🇵'],['Alexander the Great','🇬🇷'],['Harvey Specter','🇺🇸'],['Light Yagami','🇯🇵'],
+  ['Sn1per1','🇳🇱'],['never type','🇫🇮'],['T0mio','🇩🇪'],['KDKD','🇫🇮'],['Sheiden','🇨🇭'],
+  ['kurfyou','🇰🇷'],['Cupic','🇳🇱'],['Jesse Pinkman','🇨🇳'],['cant type','🇩🇪'],['Fishlord','🇯🇵'],
+  ['always','🇮🇳'],['TFBlade','🇩🇪'],['Yuuji','🇫🇮'],['Davemon','🇮🇳'],['Pobelter','🇮🇳'],
+  ['Solarbacca','🇰🇷'],['From Iron','🇮🇱'],['Yozu','🇨🇳'],['Ablazeolive','🇮🇱'],['DSG KryRa','🇯🇵'],
+  ['tahe','🇩🇪'],['MySwordCrimson','🇹🇼'],['Zamudo','🇩🇪'],['Horder','🇰🇷'],['抖音薇信tonytoppwd','🇩🇪'],
+  // Iron II
+  ['Samikin','🇪🇪'],['Isles','🇯🇵'],['quante','🇨🇳'],['Sign','🇮🇳'],['Spawn','🇺🇸'],
+  ['Bad Apple','🇳🇱'],['COME BACK HOME','🇩🇪'],['Chovy fans','🇨🇳'],['Dun','🇮🇱'],['jaded','🇮🇳'],
+  ['Kiwiplum','🇨🇭'],['Chime','🇪🇪'],['Cole Caufield','🇮🇳'],['Zven','🇰🇷'],['Daption','🇮🇳'],
+  ['PENGUIN L','🇨🇳'],['Will','🇮🇳'],['Satoru Gojo','🇪🇪'],['Cosboat','🇩🇪'],['VULCAN','🇮🇳'],
+  ['Season of Leaves','🇹🇼'],['강아지','🇪🇪'],['Mobility','🇳🇱'],['Nikkone','🇨🇳'],['chaechae1','🇸🇬'],
+  // Iron I
+  ['Dhokla','🇮🇳'],['white space','🇯🇵'],['supershyshy','🇯🇵'],['Doublelift','🇮🇳'],['zzz','🇨🇳'],
+  ['Aldnoah','🇮🇱'],['Josedeodo','🇨🇭'],['philip','🇩🇪'],['odium','🇮🇳'],['PhyMini','🇰🇷'],
+  ['Doxa','🇰🇷'],['Werry','🇫🇮'],['Afflictive','🇮🇳'],['kimdown','🇩🇪'],['DaddyVladdy','🇫🇮'],
+  ['Sora','🇫🇮'],['TTV AoJune','🇰🇷'],['Eliass','🇮🇳'],['brabro','🇯🇵'],['Hyperton','🇮🇱'],
+  ['조사병단','🇯🇵'],['Feiz','🇰🇷'],['ScaryJerry','🇹🇼'],['Breezyyy','🇮🇱'],['june','🇮🇱'],
+  // Bronze III
+  ['ADumper','🇯🇵'],['Spica','🇰🇷'],['Maestro','🇸🇬'],['IMPACT','🇮🇱'],['MU Keii','🇩🇪'],
+  ['youtube ckreborn','🇺🇸'],['Trey Songz','🇸🇬'],['FUE Shiku','🇮🇱'],['srtty','🇯🇵'],['melke','🇹🇼'],
+  ['Sushee','🇰🇷'],['Fudgecakey','🇮🇳'],['Change Ya Life','🇨🇦'],['Kisno','🇮🇱'],['im risk','🇨🇳'],
+  ['Raveydemon','🇳🇱'],['Cody Sun','🇺🇸'],['InFlame','🇮🇱'],['Diamond','🇯🇵'],['warcyclone','🇯🇵'],
+  ['The Big G','🇰🇷'],['Kurfyou','🇮🇳'],['snarkyy','🇮🇳'],['Shimmer','🇮🇳'],['Heretic','🇯🇵'],
+  // Bronze II
+  ['kisno','🇩🇪'],['阿音不吃辣','🇮🇳'],['FRYST様','🇯🇵'],['colton','🇮🇱'],['Savior','🇩🇪'],
+  ['dontdothat','🇮🇳'],['Scanning','🇨🇳'],['phreak szn','🇮🇳'],['Repobah','🇺🇸'],['Chelouche','🇮🇳'],
+  ['TinFoilSlayer','🇺🇸'],['dior','🇩🇪'],['little buFFoon','🇮🇱'],['Exuan','🇹🇼'],['xa thu pho nui','🇰🇷'],
+  ['Reveall','🇩🇪'],['東方树叶','🇰🇷'],['vulture','🇩🇪'],['Kaido Jungle YT','🇮🇳'],['Kononowicz Krzys','🇹🇼'],
+  ['DARKWINGS','🇩🇪'],['I am Súnlight','🇮🇳'],['Strompest','🇮🇳'],['funny corgiヅ','🇫🇮'],['IT Luca1','🇨🇦'],
+  // Bronze I
+  ['Kenvi','🇩🇪'],['mot ngan noi dau','🇨🇭'],['fliptik','🇮🇱'],['Maxxxxxxxx','🇮🇳'],['maces','🇮🇳'],
+  ['iluvmygf','🇰🇷'],['DefNotRoger','🇺🇸'],['Cozy','🇰🇷'],['stargazer','🇮🇳'],['Skyward','🇯🇵'],
+  ['PhyMini','🇹🇼'],['MILAH','🇨🇳'],['old ways','🇩🇪'],['Umbreon','🇨🇳'],['bountyxd','🇮🇳'],
+  ['YEAP','🇫🇮'],['Leaf','🇺🇸'],['bradleyyy','🇩🇪'],['电鳗溜鸭战神','🇯🇵'],['LOVE3001','🇳🇱'],
+  ['Nevermove','🇹🇼'],['八方來財','🇨🇳'],['cow chan','🇨🇦'],['Denathor','🇰🇷'],['spider man','🇸🇬'],
+  // Silver III
+  ['Maple','🇰🇷'],['SkyTec','🇯🇵'],['Not2Clean','🇺🇸'],['Wocaoo','🇺🇸'],['Verdict','🇨🇳'],
+  ['FLY Gakgos','🇺🇸'],['Cupic','🇰🇷'],['IlIlIlIlIIlIlIl','🇳🇱'],['SXT SVN','🇮🇱'],['notgoodenough','🇮🇳'],
+  ['AD Sin','🇮🇱'],['XNG Steven','🇰🇷'],['jamican banana','🇯🇵'],['the pob','🇨🇭'],['LYON Berserker','🇩🇪'],
+  ['Infernodan','🇮🇳'],['REDEMPTION','🇺🇸'],['Keit','🇸🇬'],['doppler','🇮🇱'],['起風了','🇮🇳'],
+  ['BiliBiliBD','🇰🇷'],['MrBrobo','🇯🇵'],['zak','🇫🇮'],['uxxionitox','🇳🇱'],['Yozu','🇯🇵'],
+  // Silver II
+  ['imnogod','🇰🇷'],['COACH FOJ','🇪🇪'],['relativecontrol','🇮🇳'],['宝宝肚肚打雷啦','🇨🇳'],['previous','🇮🇳'],
+  ['haha lol','🇹🇼'],['Petricite','🇯🇵'],['rovex','🇮🇱'],['RoseThorn','🇮🇳'],['pentaless','🇹🇼'],
+  ['Sheiden','🇸🇬'],['too digit iq','🇳🇱'],['Cosgoat','🇳🇱'],['Cupic Lux','🇩🇪'],['Zyko','🇫🇮'],
+  ['playmaker','🇯🇵'],['yves saint andy','🇯🇵'],['Koreyoshi','🇯🇵'],['Adrian Riven','🇮🇱'],['Krystil','🇰🇷'],
+  ['CaptBear','🇰🇷'],['IT Kituruken','🇯🇵'],['Kyuki','🇮🇳'],['Thanatoes','🇨🇳'],['i wont','🇰🇷'],
+  // Silver I
+  ['dddbbb','🇰🇷'],['Destiny2007','🇯🇵'],['cupcakes29','🇰🇷'],['TheSlamboy','🇨🇦'],['問間聞閃湖胡糊蝴目自白曰意懿憶熠','🇩🇪'],
+  ['jdeqpp','🇸🇬'],['Tomo','🇰🇷'],['KuddlyKraken','🇮🇱'],['Kinaka','🇨🇳'],['SEN Siroinai','🇸🇬'],
+  ['Tèo','🇮🇳'],['tytytytyh','🇺🇸'],['Invent','🇰🇷'],['LOVE3000','🇹🇼'],['yokusei','🇰🇷'],
+  ['Meow yz','🇮🇳'],['Frigault','🇨🇦'],['shochi','🇨🇳'],['Saens','🇮🇱'],['TrickyMagics','🇮🇱'],
+  ['Poobelter','🇨🇭'],['gosucx','🇳🇱'],['bigboiboner','🇨🇳'],['ALEX HO','🇩🇪'],['chenchen53','🇨🇦'],
+  // Gold III
+  ['微胖美女','🇨🇳'],['Protos','🇺🇸'],['spongebob','🇺🇸'],['boosted princess','🇰🇷'],['Kie','🇨🇳'],
+  ['Aliplane','🇯🇵'],['foj','🇰🇷'],['TTV Solitified','🇮🇱'],['ChairmanNetero','🇮🇱'],['weieryuxin','🇮🇱'],
+  ['WeiJiaLe','🇹🇼'],['calm siroinai','🇺🇸'],['dwilkz','🇮🇱'],['low','🇮🇳'],['SONA SENNA NAMI','🇫🇮'],
+  ['Palafoxy','🇯🇵'],['21 Savage','🇮🇳'],['青晚ouo','🇸🇬'],['JotaroKujo','🇺🇸'],['Keetah','🇩🇪'],
+  ['Imugi','🇰🇷'],['Riot Wick','🇸🇬'],['PYRENEESHOOLIGAN','🇮🇳'],['Evanlai','🇨🇦'],['orb of chance','🇯🇵'],
+  // Gold II
+  ['Flandre1','🇫🇮'],['YZN','🇰🇷'],['Sodium11','🇺🇸'],['Maxander','🇰🇷'],['Alicopter','🇯🇵'],
+  ['Power','🇰🇷'],['goku chan','🇨🇳'],['celtics shaq','🇳🇱'],['L9 Soraka','🇨🇳'],['Darter','🇺🇸'],
+  ['scuttlecrab3','🇮🇱'],['midmie','🇸🇬'],['chill','🇰🇷'],['deluxecoco','🇨🇳'],['LovelyKittyOwO','🇯🇵'],
+  ['Zutter','🇨🇳'],['Dollar Deja Vu','🇮🇳'],['ffja','🇨🇭'],['tomar','🇯🇵'],['ιuv','🇫🇮'],
+  ['eMa v2','🇮🇱'],['An Jing','🇨🇳'],['Goomazacshi','🇨🇳'],['use me','🇮🇳'],['CLOUD9 APA','🇮🇳'],
+  // Gold I
+  ['huhi','🇹🇼'],['Game Director','🇺🇸'],['CompIain','🇨🇳'],['Emilia In Paris','🇯🇵'],['stuntopolis','🇮🇳'],
+  ['stayfocusss','🇨🇳'],['hoooing','🇹🇼'],['Reppy','🇳🇱'],['COJA','🇰🇷'],['AdmirablePotato','🇮🇳'],
+  ['jaded','🇮🇳'],['cyw','🇮🇳'],['Tactical0','🇮🇱'],['BaldChampBaldIRL','🇹🇼'],['Beginning','🇮🇳'],
+  ['miss u everyday','🇮🇳'],['暗渡寂渊影归于尔乾坤默转赛天序','🇺🇸'],['snrb','🇨🇳'],['zscore','🇯🇵'],['ーーーーーーーーーーーーーーーー','🇨🇭'],
+  ['Incendiaaary','🇨🇳'],['2wfrevdxsc','🇩🇪'],['DAME OVER 30','🇩🇪'],['Drop','🇩🇪'],['Yordleswaggins','🇹🇼'],
+  // Platinum III
+  ['Austinn','🇫🇮'],['Sensodyne','🇪🇪'],['Country Mouse24','🇨🇳'],['小 雨','🇮🇱'],['xip','🇮🇳'],
+  ['Ahj','🇮🇱'],['Avers','🇹🇼'],['Hiccup1357','🇮🇳'],['艾斯卡诺','🇰🇷'],['啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊啊','🇩🇪'],
+  ['Miracle','🇨🇭'],['5leel','🇺🇸'],['Shieldworm','🇨🇭'],['City of Tears','🇰🇷'],['Moss','🇹🇼'],
+  ['co1dco1d','🇰🇷'],['我嗦着兄弟的牛子终于尝到女神的味','🇮🇱'],['Loracia','🇫🇮'],['Cendi','🇰🇷'],['DarkDragon48','🇮🇳'],
+  ['Walter White','🇸🇬'],['Skyy','🇮🇳'],['040402','🇮🇳'],['Illamul','🇰🇷'],['Serenade','🇮🇳'],
+  // Platinum II
+  ['wohuizhanchulai','🇰🇷'],['Nickich','🇸🇬'],['Kat','🇫🇮'],['Mental Clarity','🇯🇵'],['iron man','🇨🇳'],
+  ['夜夜快乐','🇮🇱'],['Nightstar x Lia','🇮🇱'],['Jons Jons','🇮🇳'],['Porty','🇮🇳'],['Ninkey','🇺🇸'],
+  ['Flim','🇮🇱'],['A Frozen Titan','🇺🇸'],['Gïo','🇨🇦'],['xiaozaoxiaozao','🇰🇷'],['nextlifefast','🇮🇳'],
+  ['1314','🇺🇸'],['Abi Talent','🇩🇪'],['Good Boi','🇨🇳'],['Zamudo','🇨🇳'],['Sensational','🇨🇳'],
+  ['JBL speakers','🇮🇱'],['PATREON HUNCHO','🇩🇪'],['ShadowThrash','🇹🇼'],['kitten cat','🇨🇦'],['AlphaWolffy','🇮🇱'],
+  // Platinum I
+  ['Bfate','🇨🇭'],['RaxDem','🇨🇳'],['Thrall washacked','🇰🇷'],['9 PDFS CANT WIN','🇰🇷'],['Aaron Song','🇯🇵'],
+  ['DH MERCHANT','🇺🇸'],['RutyBagel','🇸🇬'],['100 men','🇮🇱'],['3in1shampoo','🇮🇳'],['Michael Teriyaki','🇰🇷'],
+  ['KatEvolved','🇰🇷'],['Érk','🇸🇬'],['NotSporks','🇳🇱'],['Colby','🇮🇱'],['Aba','🇮🇱'],
+  ['aquanick','🇸🇬'],['Summoner V','🇮🇱'],['The GXN','🇳🇱'],['basalist','🇳🇱'],['Foxy','🇸🇬'],
+  ['Biov2','🇨🇳'],['Faker fans','🇺🇸'],['Effortless','🇮🇳'],['zingie','🇰🇷'],['MEECHOL','🇺🇸'],
+  // Emerald III
+  ['arbrioo','🇮🇳'],['Twísted Fate','🇪🇪'],['murilao','🇸🇬'],['rank mogger','🇨🇳'],['xFSN Saber','🇮🇳'],
+  ['cookie','🇰🇷'],['CHRIST IS KING','🇮🇳'],['Stop It App','🇯🇵'],['José José','🇸🇬'],['2424','🇮🇳'],
+  ['Toothbooth','🇹🇼'],['Hatsune Neeko','🇮🇱'],['Obstinatus','🇨🇳'],['Cylainius','🇨🇭'],['南风知我意','🇨🇳'],
+  ['Emiya','🇸🇬'],['checca','🇯🇵'],['Shura','🇮🇳'],['nico','🇰🇷'],['Ears Up','🇳🇱'],
+  ['GJONES','🇰🇷'],['SALVA','🇨🇦'],['fakelove','🇨🇳'],['Werner Ziegler','🇨🇳'],['flowers','🇨🇦'],
+  // Emerald II
+  ['alchemist','🇨🇳'],['Airflash','🇮🇳'],['Artemis','🇰🇷'],['holychickencows','🇮🇳'],['UziBangDeft','🇪🇪'],
+  ['el que tal','🇩🇪'],['Matty','🇹🇼'],['next level','🇮🇱'],['Wormsworth','🇯🇵'],['Nguyendeptrai','🇨🇳'],
+  ['chimneychimney','🇳🇱'],['YoojungHukiriLee','🇨🇳'],['TalbotXd','🇰🇷'],['Sketch','🇺🇸'],['bobjuice67','🇮🇱'],
+  ['KhaliDino','🇨🇳'],['Ivory','🇩🇪'],['no regret','🇸🇬'],['Apex BlindGoat','🇩🇪'],['JablOwen','🇯🇵'],
+  ['Jyl','🇰🇷'],['Lony','🇰🇷'],['轮回飞雪','🇮🇳'],['Shiphtur','🇯🇵'],['Dinner','🇰🇷'],
+  // Emerald I
+  ['Alyri TV','🇨🇳'],['Atomic Betty','🇨🇳'],['Quantum','🇮🇱'],['born to','🇰🇷'],['Magmor','🇩🇪'],
+  ['mericsong','🇰🇷'],['shekibs','🇮🇳'],['Zinie','🇩🇪'],['gone crazy','🇮🇱'],['Ayvi','🇰🇷'],
+  ['The Doctor','🇫🇮'],['ZEZE ZAZA XOOO','🇨🇳'],['HE CHOSE ME','🇺🇸'],['atmost','🇺🇸'],['dios','🇨🇦'],
+  ['entry fragger','🇩🇪'],['Lax','🇯🇵'],['APPLESEED','🇮🇳'],['Pastel Ahri','🇹🇼'],['ZeroDomain','🇯🇵'],
+  ['Music','🇨🇳'],['verticality','🇮🇳'],['Topablo','🇮🇱'],['Dunk','🇺🇸'],['LoveAndHappiness','🇯🇵'],
+  // Diamond III
+  ['Jeremy Lin','🇺🇸'],['Levitate','🇩🇪'],['d4vvd','🇩🇪'],['Poofu','🇯🇵'],['Cinnamon Bread','🇨🇳'],
+  ['Let try again','🇮🇱'],['Amazing','🇺🇸'],['refugo','🇨🇳'],['Wrath','🇨🇳'],['NotFlanders','🇰🇷'],
+  ['apple117','🇰🇷'],['akaza','🇺🇸'],['Darce','🇮🇳'],['Ariana','🇳🇱'],['duokebei','🇸🇬'],
+  ['来就有','🇯🇵'],['Vietnam Yone','🇰🇷'],['z z','🇮🇳'],['falling','🇸🇬'],['RegularMoo','🇮🇳'],
+  ['Skitty','🇨🇦'],['fiction','🇰🇷'],['마술하나보여줄까','🇩🇪'],['PetriciteLoL','🇨🇳'],['7Wylly7','🇮🇳'],
+  // Diamond II
+  ['Seal','🇮🇳'],['mabud','🇸🇬'],['Jitty','🇨🇦'],['Skelpy','🇮🇳'],['Thomas Wake','🇸🇬'],
+  ['Doubtful','🇮🇳'],['LEVITICUS','🇸🇬'],['감자신','🇫🇮'],['Sky','🇳🇱'],['Vincent ADgap','🇮🇳'],
+  ['seal','🇨🇳'],['TeeKay','🇺🇸'],['real AOC','🇺🇸'],['ondam','🇨🇦'],['ABitBad','🇰🇷'],
+  ['blue kayn','🇪🇪'],['Saltyvl','🇫🇮'],['SiempreUTP','🇮🇱'],['Geiger','🇳🇱'],['andysilva100','🇸🇬'],
+  ['ChabunHage','🇳🇱'],['渔和渔的鱼UwU','🇩🇪'],['thee','🇨🇳'],['ENTHRALLED','🇯🇵'],['bigfatjuicer','🇺🇸'],
+  // Diamond I
+  ['Vicarius','🇩🇪'],['Journey','🇸🇬'],['savor','🇫🇮'],['serpentshadow299','🇨🇳'],['Xed','🇸🇬'],
+  ['Sofie','🇮🇳'],['峡谷静香 在线揍人','🇨🇳'],['Tub','🇰🇷'],['Enen','🇹🇼'],['froggie','🇰🇷'],
+  ['El BrayaKing','🇺🇸'],['Aderezo','🇮🇳'],['lil bro of Fizzi','🇮🇳'],['anya','🇩🇪'],['Ricebally','🇳🇱'],
+  ['Hypha','🇮🇱'],['prezera','🇨🇳'],['Zenden','🇺🇸'],['FoxChar2','🇨🇦'],['DieUnderMyAxe','🇫🇮'],
+  ['uzidiarac','🇰🇷'],['1000AP Footjob','🇹🇼'],['BENTIEEMMAHUANG','🇨🇳'],['angycroc','🇩🇪'],['never look back','🇨🇳'],
+  // Master III
+  ['Zethal','🇩🇪'],['Rabbithasu','🇨🇳'],['Kenzo Tenma XD','🇰🇷'],['JokerStatus','🇮🇳'],['Hafu Jr','🇮🇳'],
+  ['CaillouX','🇰🇷'],['Hwoze','🇰🇷'],['haa','🇯🇵'],['Blanquirroja','🇰🇷'],['Caketharsis','🇮🇳'],
+  ['Walter Kite','🇮🇱'],['SageWabe','🇯🇵'],['HKEggWaffle','🇺🇸'],['Midorima','🇮🇳'],['ljj','🇪🇪'],
+  ['PRIDE','🇰🇷'],['HIGH APM HOT GF','🇮🇳'],['USC YunJia','🇰🇷'],['walid georgey','🇫🇮'],['Zacian','🇯🇵'],
+  ['Friend of Forest','🇸🇬'],['BOL4','🇮🇱'],['White Canyon','🇩🇪'],['yukiyukiyuki','🇸🇬'],['cara','🇩🇪'],
+  // Master II
+  ['Kzykendy','🇺🇸'],['UNEMPLOYED UNC','🇺🇸'],['Glue Monkey 025','🇩🇪'],['AJOSU','🇮🇱'],['happens lol haha','🇸🇬'],
+  ['sweeho','🇨🇳'],['别再错过','🇮🇱'],['AnotherGanker','🇰🇷'],['whoops','🇮🇳'],['Mental Athlete','🇩🇪'],
+  ['Nukezz','🇰🇷'],['ttv sendrope','🇪🇪'],['Gladiore','🇰🇷'],['Saeriel','🇮🇳'],['jgkong','🇨🇳'],
+  ['na rrrak นาระกซไ','🇹🇼'],['푸른 하늘','🇹🇼'],['hate it here','🇯🇵'],['urmomni','🇮🇱'],['Lobunny','🇮🇱'],
+  ['TymMio','🇺🇸'],['Sneaky','🇮🇳'],['needyhenry','🇯🇵'],['준 이','🇯🇵'],['无非一念救苍生','🇰🇷'],
+  // Master I
+  ['Maxandos','🇮🇳'],['The Nine Tail','🇨🇳'],['viewz','🇰🇷'],['Bounded','🇨🇦'],['神龍大俠','🇯🇵'],
+  ['SuperEdgyName666','🇰🇷'],['toronto LF GF','🇹🇼'],['Syuvi','🇨🇳'],['Victør','🇮🇳'],['your waifu bf','🇰🇷'],
+  ['Tyler','🇸🇬'],['sluggiema','🇯🇵'],['Kodeki','🇹🇼'],['toir lesima','🇨🇦'],['WX RuneMeDown','🇺🇸'],
+  ['Linomoso','🇺🇸'],['Levitate','🇮🇱'],['Mooncakes','🇨🇦'],['WisedLegacy','🇫🇮'],['Johnryder','🇨🇳'],
+  ['Heszu','🇩🇪'],['blueberry faygo','🇹🇼'],['kbt','🇯🇵'],['GoodnightCaki','🇪🇪'],['Sasiki','🇨🇳'],
+];
+
+// ══════════════════════════════════════════════
+// BUILD PLAYER DB
+// ══════════════════════════════════════════════
+function rng(seed){let s=seed;return()=>{s=(s*16807)%2147483647;return(s-1)/2147483646};}
+
+// Top-10 favorites always get skill 10
+const FAVORITES=new Set(['Sn1per1','never type','T0mio','KDKD','Sheiden','kurfyou','Cupic','Jesse Pinkman','cant type','Fishlord']);
+
+// Special characters with superSkill (WR override)
+const SPECIAL_PLAYERS={
+  'Ayanokouji':   0.85,
+  'Alexander the Great': 0.84,
+  'Harvey Specter': 0.83,
+  'Light Yagami': 0.82,
+};
+
+// 271 new high-elo players with 76% WR
+const NEW_PLAYERS_76=new Set([
+  'ecnerwala','Benq','tourist','VivaciousAubergine','jiangly','ksun48','Kevin114514','strapple','dXqwq','Otomachi_Una',
+  'Qingyu','adamant','Um_nik','errorgorn','Dominater069','Proof_by_QED','cry','Arpa','SecondThread','TheScrasse',
+  'vn4k','OPT-RPI','FelixArg','AlexandruINV','theoinfo','Wxssim','Proof_by_QED2','DuyMinh3005','tayyab_ali_marwat','Mindeveloped',
+  'Zlobober','ismailfateen','redsexx','Hallowno4','adarsh7203','accord','captainkhan','pilliamw','nicotina04','Mindeveloped2',
+  'MikeMirzayanov','pratikrkcha','Down_bad_4_haiender288','DuyMinh3005b','MBBN','ecnerwala2','Benq2','conqueror_of_tourist','BenjaminJ','matchalover',
+  'jason_sun','jdurie','A_G','golomb','awesomeguy856','YuukiS','drydock','SeptaCube','McPqndq','ikaurov',
+  'riverwalk7','DanTheMan','gabrielwu','DylanSmith','Jasonwei08','kondasujay2','DanielChang','Ginge','n685','askd',
+  'flamestorm','surajchip2','lethan3','Lilypad','SpinSpen','mwen','cockatooo_2025GM','malachi_toney_goat','kevin','MattTheNub',
+  'PelicanPilot','nathanballman','Auchenai01','tealab','etian6795','OrcSlop','I_want_AK_IOI','Tomato_Cultivator','CutSandstone','conqueror_of_mishai',
+  'Ste','_odium','oursaco','serichaoo','CodingPokemon','diss_quack','amsraman','countful','Ritwin','fishy15',
+  'Shifted','lucaski2','Broder','sahasrad','twosquares','azure-','123gjweq2','applepi216','tuanha','C0DET1GER',
+  'popkarsd','JMK100','lwm7708','madhavG','nickbelov','ezraft','sniffleheim','sevenseas','EMBailey','samkim21',
+  'niwrad','Astatinear','rangerscowboys','areke','Haorayz4','hyprox','kindmango','Scalm','eggag32','tgossett',
+  'CatsAreCool','PMPuns','SirMrGuy','TheRickyZhang','paaarth','ezGeometry','Ab_hoga_real_Cumback','ajxu2','kitsuna','afakeusername',
+  'gotexans','i_liek_cheezits','Immanence','VulcanForge','Jensen123','reirugan','liamellison','atlas7772','raybb','andycoke',
+  'fclvbfm934','avnithv','0x002336','jiank','hrhuynguyen','DarkTemplarDrop','flight','tloinuy','alan-c','Apteryxx',
+  'jli505','OkClinty','_ahat','Davisz','NomNomFull','Kuzey','NaturalSelection','beckman004','ibra','vitruvius',
+  'TTT222','Gilwall','timg8710','TheYashB','pbxk','balakrishnan','SummitClimbingDevil','lce4113','santup','eros007',
+  'Whimpers','anejmeldeen','Josh2775','IceWolf898','Levchenko','WorldWarV','monkey8','seventeen','xug','jinpachi_ego',
+  'Mantlemoose','TemporalBloom','wjli','antares2262','Mathletesv','C0ldSmi1e','IceSerpent','OpGm','sukon','awesomemaths',
+  'fluffyunicorn1125','bubbarob19','AkshajK','Nicolas125841','tatar4onok','101Noir','srzhang','Toinfinity','andriaberi','Puddles_Penguin',
+  'WalrusRamen21','Mokuroh54','angrysid','42-the_answer','tristansun','JashCodes','kevinyu','burns7','mrandal','pro404',
+  'sixg','swtchblade','SLin25','Aaronli2','shishiro6789','Donald_John_Trump','OnjoujiToki','mtand872','MoltenMan6','Negationist',
+  'Franktastic','shvec','winbow13','DatHam','Westin_sheep','Hastorius','marks39','farmpiggie','Se7enn','Ryan_Gosling_Meatrider',
+  'DanielLong','byebye10000','mgoldy925','pilliamw2','Aigis',
+  'iztrax','Caylex','Mango2011','Zheng_iii','wangmarui','Nine_Suns','Linx','Sanae','Ocean-cat','yslsj',
+  'installb','Network_Error','orzFesdrer','konb1','pein531','1677mt16','JoeyJ','Watersphere','ylzxxx7','zlxPTH',
+  'ValenciaTravis','chennie','wangzha','Ch1F4N_','Antiamuny','Yaimsea',
+]);
+
+function buildPlayerDB(){
+  const db={};
+  const r=rng(42);
+  let pidx=0;
+  // Iron (0) → Master (7): 3 divs each, 25 players per div
+  for(let ti=0;ti<=7;ti++){
+    db[ti]={};
+    for(let d=0;d<3;d++){
+      db[ti][d]=[];
+      for(let i=0;i<25;i++){
+        const p=FIXED_PLAYERS[pidx];
+        // skill 1-10: favorites get 10, others distributed 1-10 via rng
+        const rawSkill=Math.max(1,Math.min(10,Math.ceil(r()*10)));
+        const skill=FAVORITES.has(p[0])?10:rawSkill;
+        const superSkill=SPECIAL_PLAYERS[p[0]]||null;
+        const startLP=SPECIAL_PLAYERS[p[0]]?0:Math.floor(r()*99);
+        db[ti][d].push({
+          id:`p_${ti}_${d}_${i}`,
+          name:p[0],
+          flag:p[1],
+          lp:startLP,
+          skill,
+          superSkill,
+          ti,di:d
+        });
+        pidx++;
+      }
+    }
+  }
+  // GM (8) and Challenger (9): start EMPTY
+  db[8]={0:[]};
+  db[9]={0:[]};
+
+  // ── 271 new high-elo players (76% WR) across Gold, Platinum, Diamond, Master ──
+  const newPlayers=[
+    // Gold III (ti=3, di=0)
+    ['MIT ecnerwala','🇺🇸'],['HRV Benq','🇺🇸'],['CLTC tourist','🇺🇸'],['MIT VivaciousAubergine','🇺🇸'],['HRV jiangly','🇺🇸'],
+    ['CLTC ksun48','🇺🇸'],['MIT Kevin114514','🇺🇸'],['HRV strapple','🇺🇸'],['CLTC dXqwq','🇺🇸'],['MIT Otomachi_Una','🇺🇸'],
+    ['HRV Qingyu','🇺🇸'],['CLTC adamant','🇺🇸'],['MIT Um_nik','🇺🇸'],['HRV errorgorn','🇺🇸'],['CLTC Dominater069','🇺🇸'],
+    ['MIT Proof_by_QED','🇺🇸'],['HRV cry','🇺🇸'],['CLTC Arpa','🇺🇸'],['MIT SecondThread','🇺🇸'],['HRV TheScrasse','🇺🇸'],
+    ['CLTC vn4k','🇺🇸'],['MIT OPT-RPI','🇺🇸'],['HRV FelixArg','🇺🇸'],
+    // Gold II (ti=3, di=1)
+    ['CLTC AlexandruINV','🇺🇸'],['MIT theoinfo','🇺🇸'],['HRV Wxssim','🇺🇸'],['CLTC Proof_by_QED','🇺🇸'],['MIT DuyMinh3005','🇺🇸'],
+    ['HRV tayyab_ali_marwat','🇺🇸'],['CLTC Mindeveloped','🇺🇸'],['MIT Zlobober','🇺🇸'],['HRV ismailfateen','🇺🇸'],['CLTC redsexx','🇺🇸'],
+    ['MIT Hallowno4','🇺🇸'],['HRV adarsh7203','🇺🇸'],['CLTC accord','🇺🇸'],['MIT captainkhan','🇺🇸'],['HRV pilliamw','🇺🇸'],
+    ['CLTC nicotina04','🇺🇸'],['MIT Mindeveloped','🇺🇸'],['HRV MikeMirzayanov','🇺🇸'],['CLTC pratikrkcha','🇺🇸'],['MIT Down_bad_4_haiender288','🇺🇸'],
+    ['HRV DuyMinh3005','🇺🇸'],['CLTC MBBN','🇺🇸'],['MIT ecnerwala','🇺🇸'],
+    // Gold I (ti=3, di=2)
+    ['HRV Benq','🇺🇸'],['CLTC conqueror_of_tourist','🇺🇸'],['MIT BenjaminJ','🇺🇸'],['HRV matchalover','🇺🇸'],['CLTC jason_sun','🇺🇸'],
+    ['MIT jdurie','🇺🇸'],['HRV A_G','🇺🇸'],['CLTC golomb','🇺🇸'],['MIT awesomeguy856','🇺🇸'],['HRV YuukiS','🇺🇸'],
+    ['CLTC drydock','🇺🇸'],['MIT SeptaCube','🇺🇸'],['HRV McPqndq','🇺🇸'],['CLTC ikaurov','🇺🇸'],['MIT riverwalk7','🇺🇸'],
+    ['HRV DanTheMan.','🇺🇸'],['CLTC gabrielwu','🇺🇸'],['MIT DylanSmith','🇺🇸'],['HRV Jasonwei08','🇺🇸'],['CLTC kondasujay2','🇺🇸'],
+    ['MIT DanielChang','🇺🇸'],['HRV Ginge','🇺🇸'],['CLTC n685','🇺🇸'],
+    // Platinum III (ti=4, di=0)
+    ['MIT askd','🇺🇸'],['HRV flamestorm','🇺🇸'],['CLTC surajchip2','🇺🇸'],['MIT lethan3','🇺🇸'],['HRV Lilypad','🇺🇸'],
+    ['CLTC SpinSpen','🇺🇸'],['MIT mwen','🇺🇸'],['HRV cockatooo_2025GM','🇺🇸'],['CLTC malachi_toney_goat','🇺🇸'],['MIT kevin','🇺🇸'],
+    ['HRV MattTheNub','🇺🇸'],['CLTC PelicanPilot','🇺🇸'],['MIT nathanballman','🇺🇸'],['HRV Auchenai01','🇺🇸'],['CLTC tealab','🇺🇸'],
+    ['MIT etian6795','🇺🇸'],['HRV OrcSlop','🇺🇸'],['CLTC I_want_AK_IOI','🇺🇸'],['MIT Tomato_Cultivator','🇺🇸'],['HRV CutSandstone','🇺🇸'],
+    ['CLTC conqueror_of_mishai','🇺🇸'],['MIT Ste','🇺🇸'],['HRV _odium','🇺🇸'],
+    // Platinum II (ti=4, di=1)
+    ['CLTC oursaco','🇺🇸'],['MIT serichaoo','🇺🇸'],['HRV CodingPokemon','🇺🇸'],['CLTC diss_quack','🇺🇸'],['MIT amsraman','🇺🇸'],
+    ['HRV countful','🇺🇸'],['CLTC Ritwin','🇺🇸'],['MIT fishy15','🇺🇸'],['HRV Shifted','🇺🇸'],['CLTC lucaski2','🇺🇸'],
+    ['MIT Broder','🇺🇸'],['HRV sahasrad','🇺🇸'],['CLTC twosquares','🇺🇸'],['MIT azure-','🇺🇸'],['HRV 123gjweq2','🇺🇸'],
+    ['CLTC applepi216','🇺🇸'],['MIT tuanha','🇺🇸'],['HRV C0DET1GER','🇺🇸'],['CLTC popkarsd','🇺🇸'],['MIT JMK100','🇺🇸'],
+    ['HRV lwm7708','🇺🇸'],['CLTC madhavG','🇺🇸'],['MIT nickbelov','🇺🇸'],
+    // Platinum I (ti=4, di=2)
+    ['HRV ezraft','🇺🇸'],['CLTC sniffleheim','🇺🇸'],['MIT sevenseas','🇺🇸'],['HRV EMBailey','🇺🇸'],['CLTC samkim21','🇺🇸'],
+    ['MIT niwrad','🇺🇸'],['HRV Astatinear','🇺🇸'],['CLTC rangerscowboys','🇺🇸'],['MIT areke','🇺🇸'],['HRV Haorayz4','🇺🇸'],
+    ['CLTC hyprox','🇺🇸'],['MIT kindmango','🇺🇸'],['HRV Scalm','🇺🇸'],['CLTC eggag32','🇺🇸'],['MIT tgossett','🇺🇸'],
+    ['HRV CatsAreCool','🇺🇸'],['CLTC PMPuns','🇺🇸'],['MIT SirMrGuy','🇺🇸'],['HRV TheRickyZhang','🇺🇸'],['CLTC paaarth','🇺🇸'],
+    ['MIT ezGeometry','🇺🇸'],['HRV Ab_hoga_real_Cumback','🇺🇸'],['CLTC ajxu2','🇺🇸'],
+    // Diamond III (ti=6, di=0)
+    ['MIT kitsuna','🇺🇸'],['HRV afakeusername','🇺🇸'],['CLTC gotexans','🇺🇸'],['MIT i_liek_cheezits','🇺🇸'],['HRV Immanence','🇺🇸'],
+    ['CLTC VulcanForge','🇺🇸'],['MIT Jensen123','🇺🇸'],['HRV reirugan','🇺🇸'],['CLTC liamellison','🇺🇸'],['MIT atlas7772','🇺🇸'],
+    ['HRV raybb','🇺🇸'],['CLTC andycoke','🇺🇸'],['MIT fclvbfm934','🇺🇸'],['HRV avnithv','🇺🇸'],['CLTC 0x002336','🇺🇸'],
+    ['MIT jiank','🇺🇸'],['HRV hrhuynguyen','🇺🇸'],['CLTC DarkTemplarDrop','🇺🇸'],['MIT flight','🇺🇸'],['HRV tloinuy','🇺🇸'],
+    ['CLTC alan-c','🇺🇸'],['MIT Apteryxx','🇺🇸'],['HRV jli505','🇺🇸'],
+    // Diamond II (ti=6, di=1)
+    ['CLTC OkClinty','🇺🇸'],['MIT _ahat','🇺🇸'],['HRV Davisz','🇺🇸'],['CLTC NomNomFull','🇺🇸'],['MIT Kuzey','🇺🇸'],
+    ['HRV NaturalSelection','🇺🇸'],['CLTC beckman004','🇺🇸'],['MIT ibra','🇺🇸'],['HRV vitruvius','🇺🇸'],['CLTC TTT222','🇺🇸'],
+    ['MIT Gilwall','🇺🇸'],['HRV timg8710','🇺🇸'],['CLTC TheYashB','🇺🇸'],['MIT pbxk','🇺🇸'],['HRV balakrishnan','🇺🇸'],
+    ['CLTC SummitClimbingDevil','🇺🇸'],['MIT lce4113','🇺🇸'],['HRV santup','🇺🇸'],['CLTC eros007','🇺🇸'],['MIT Whimpers','🇺🇸'],
+    ['HRV anejmeldeen','🇺🇸'],['CLTC Josh2775','🇺🇸'],['MIT IceWolf898','🇺🇸'],
+    // Diamond I (ti=6, di=2)
+    ['HRV Levchenko','🇺🇸'],['CLTC WorldWarV','🇺🇸'],['MIT monkey8','🇺🇸'],['HRV seventeen','🇺🇸'],['CLTC xug','🇺🇸'],
+    ['MIT jinpachi_ego','🇺🇸'],['HRV Mantlemoose','🇺🇸'],['CLTC TemporalBloom','🇺🇸'],['MIT wjli','🇺🇸'],['HRV antares2262','🇺🇸'],
+    ['CLTC Mathletesv','🇺🇸'],['MIT C0ldSmi1e','🇺🇸'],['HRV IceSerpent','🇺🇸'],['CLTC OpGm','🇺🇸'],['MIT sukon','🇺🇸'],
+    ['HRV awesomemaths','🇺🇸'],['CLTC fluffyunicorn1125','🇺🇸'],['MIT bubbarob19','🇺🇸'],['HRV AkshajK','🇺🇸'],['CLTC Nicolas125841','🇺🇸'],
+    ['MIT tatar4onok','🇺🇸'],['HRV 101Noir','🇺🇸'],['CLTC srzhang','🇺🇸'],
+    // Master III (ti=7, di=0)
+    ['MIT Toinfinity','🇺🇸'],['HRV andriaberi','🇺🇸'],['CLTC Puddles_Penguin','🇺🇸'],['MIT WalrusRamen21','🇺🇸'],['HRV Mokuroh54','🇺🇸'],
+    ['CLTC angrysid','🇺🇸'],['MIT 42-the_answer','🇺🇸'],['HRV tristansun','🇺🇸'],['CLTC JashCodes','🇺🇸'],['MIT kevinyu','🇺🇸'],
+    ['HRV burns7','🇺🇸'],['CLTC mrandal','🇺🇸'],['MIT pro404','🇺🇸'],['HRV sixg','🇺🇸'],['CLTC swtchblade','🇺🇸'],
+    ['MIT SLin25','🇺🇸'],['HRV Aaronli2','🇺🇸'],['CLTC shishiro6789','🇺🇸'],['MIT Donald_John_Trump','🇺🇸'],['HRV OnjoujiToki','🇺🇸'],
+    ['CLTC mtand872','🇺🇸'],['MIT MoltenMan6','🇺🇸'],['HRV Negationist','🇺🇸'],
+    // Master II (ti=7, di=1)
+    ['CLTC Franktastic','🇺🇸'],['MIT shvec','🇺🇸'],['HRV winbow13','🇺🇸'],['CLTC DatHam','🇺🇸'],['MIT Westin_sheep','🇺🇸'],
+    ['HRV Hastorius','🇺🇸'],['CLTC marks39','🇺🇸'],['MIT farmpiggie','🇺🇸'],['HRV Se7enn','🇺🇸'],['CLTC Ryan_Gosling_Meatrider','🇺🇸'],
+    ['MIT DanielLong','🇺🇸'],['HRV byebye10000','🇺🇸'],['CLTC mgoldy925','🇺🇸'],['MIT pilliamw','🇺🇸'],['HRV Aigis','🇺🇸'],
+    ['TU iztrax','🇨🇳'],['PU Caylex','🇨🇳'],['TU Mango2011','🇨🇳'],['PU Zheng_iii','🇨🇳'],['TU wangmarui','🇨🇳'],
+    ['PU Nine_Suns','🇨🇳'],['TU chennie','🇨🇳'],['PU wangzha','🇨🇳'],
+    // Master I (ti=7, di=2)
+    ['TU Linx','🇨🇳'],['PU Sanae','🇨🇳'],['TU Ocean-cat','🇨🇳'],['PU yslsj','🇨🇳'],['TU installb','🇨🇳'],
+    ['PU Network_Error','🇨🇳'],['TU orzFesdrer','🇨🇳'],['PU konb1','🇨🇳'],['TU pein531','🇨🇳'],['PU 1677mt16','🇨🇳'],
+    ['TU JoeyJ','🇨🇳'],['PU Watersphere','🇨🇳'],['TU ylzxxx7','🇨🇳'],['PU zlxPTH','🇨🇳'],['TU ValenciaTravis','🇨🇳'],
+    ['PU Ch1F4N_','🇨🇳'],['TU Antiamuny','🇨🇳'],['PU Yaimsea','🇨🇳'],
+  ];
+
+  // Division mapping for new players
+  const divMap=[
+    [3,0,23],[3,1,23],[3,2,23],
+    [4,0,23],[4,1,23],[4,2,23],
+    [6,0,23],[6,1,23],[6,2,23],
+    [7,0,23],[7,1,23],[7,2,18],
+  ];
+  let npIdx=0;
+  divMap.forEach(([ti,di,count])=>{
+    for(let i=0;i<count&&npIdx<newPlayers.length;i++,npIdx++){
+      const p=newPlayers[npIdx];
+      db[ti][di].push({
+        id:`np_${ti}_${di}_${i}`,
+        name:p[0],flag:p[1],
+        lp:Math.floor(Math.random()*99),
+        skill:7,superSkill:0.76,ti,di
+      });
+    }
+  });
+
+  return db;
+}
+
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+function defaultState(){
+  return{ti:0,di:0,lp:0,gmTotalLP:0,inPromo:false,playerDB:buildPlayerDB(),viewTi:0,viewDi:0,streak:0,lastStreakDate:'',lastOpenDate:'',calendarData:{},streakPoints:0,knownChallengers:[],greedMinsToday:0};
+}
+function loadState(){
+  try{
+    const raw=localStorage.getItem('elodash_v11');
+    if(!raw)return defaultState();
+    const s=JSON.parse(raw);
+    if(!s.playerDB)s.playerDB=buildPlayerDB();
+    // Ensure GM/Challenger slots exist
+    if(!s.playerDB[8])s.playerDB[8]={0:[]};
+    if(!s.playerDB[9])s.playerDB[9]={0:[]};
+    return s;
+  }catch{return defaultState();}
+}
+function saveState(){
+  try{localStorage.setItem('elodash_v11',JSON.stringify(state));}catch{}
+}
+
+let state=loadState();
+
+// ══════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════
+const curTier=()=>TIER_RANKS[state.ti];
+const isHighElo=()=>state.ti>=8;
+const divLabel=()=>{
+  const t=curTier();
+  if(t.maxDiv===1)return'';
+  return'Division '+DIV_LABELS[state.di];
+};
+
+function myGlobalPos(){
+  let pos=0;
+  for(let ti=TIER_RANKS.length-1;ti>state.ti;ti--){
+    const t=TIER_RANKS[ti];
+    for(let d=0;d<t.maxDiv;d++) pos+=state.playerDB[ti][d].length;
+  }
+  const t=curTier();
+  for(let d=state.di+1;d<t.maxDiv;d++) pos+=state.playerDB[state.ti][d].length;
+  const div=state.playerDB[state.ti][state.di];
+  pos+=div.filter(p=>p.lp>state.lp).length;
+  return pos+1;
+}
+
+function ladderEntries(ti,di){
+  const players=[...state.playerDB[ti][di]];
+  players.sort((a,b)=>b.lp-a.lp);
+  const isMyTier=ti===state.ti&&di===state.di;
+  if(isMyTier){
+    const pos=players.filter(p=>p.lp>state.lp).length;
+    players.splice(pos,0,{id:'__me__',name:'⭐ YOU',flag:'',lp:state.lp,isMe:true});
+  }
+  return players;
+}
+
+// ══════════════════════════════════════════════
+// BOT SIMULATION (runs on pomodoro complete)
+// ══════════════════════════════════════════════
+function simulateBots(){
+  const r=rng(Date.now()%999983);
+  // Process tiers 0-8 (not Challenger — that's top-10 only)
+  for(let ti=0;ti<=8;ti++){
+    const tier=TIER_RANKS[ti];
+    const divCount=tier.maxDiv;
+    for(let d=0;d<divCount;d++){
+      const division=state.playerDB[ti][d];
+      for(let i=division.length-1;i>=0;i--){
+        const p=division[i];
+        // superSkill overrides normal skill for special characters
+        // Normal: skill 1→47%, 5→53%, 10→61%
+        // Special: Ayanokouji 85%, Alexander 84%, Harvey 83%, Light 82%
+        let bias;
+        if(p.superSkill){
+          bias=1-p.superSkill; // e.g. 0.85 WR → bias=0.15
+        } else {
+          bias=0.53-(p.skill?((p.skill-5)*0.014):0);
+        }
+        const delta=Math.round((r()-bias)*35); // range ~-15 to +20
+        p.lp=p.lp+delta;
+
+        if(p.lp>=100){
+          // Try promote bot
+          p.lp=p.lp-100;
+          if(ti<=7&&d<2){
+            // Move to next div in same tier
+            p.di=d+1;
+            state.playerDB[ti][d+1].push(p);
+            division.splice(i,1);
+          } else if(ti<=7&&d===2){
+            // Move to next tier div 0
+            p.ti=ti+1;p.di=0;
+            state.playerDB[ti+1][0].push(p);
+            division.splice(i,1);
+          } else if(ti===8){
+            // GM bot reaching 100+ LP: check if top-10 worthy
+            p.lp=p.lp+100; // restore full LP value
+            // Will be handled in challenger check below
+          }
+        } else if(p.lp<0){
+          p.lp=p.lp+100;
+          if(d>0){
+            p.di=d-1;
+            state.playerDB[ti][d-1].push(p);
+            division.splice(i,1);
+          } else if(ti>0){
+            const pt=TIER_RANKS[ti-1];
+            p.ti=ti-1;p.di=pt.maxDiv-1;
+            state.playerDB[ti-1][pt.maxDiv-1].push(p);
+            division.splice(i,1);
+          } else {
+            p.lp=0;
+          }
+        }
+      }
+    }
+  }
+
+  // Challenger: top 10 of all GM bots by LP
+  // Collect all GM bots + current challengers, re-rank
+  const allGMAndChallengers=[
+    ...state.playerDB[8][0],
+    ...state.playerDB[9][0]
+  ];
+  if(allGMAndChallengers.length>0){
+    allGMAndChallengers.sort((a,b)=>b.lp-a.lp);
+    const top10=allGMAndChallengers.slice(0,10);
+    const rest=allGMAndChallengers.slice(10);
+    // Assign top10 to Challenger
+    state.playerDB[9][0]=top10.map(p=>({...p,ti:9,di:0}));
+    const existingGM=state.playerDB[8][0].filter(p=>!allGMAndChallengers.find(x=>x.id===p.id));
+    state.playerDB[8][0]=[...existingGM,...rest.map(p=>({...p,ti:8,di:0}))];
+  }
+  checkNewChallengers();
+}
+
+// ══════════════════════════════════════════════
+// POMODORO  (work → auto-break → work)
+// ══════════════════════════════════════════════
+const CIRC=2*Math.PI*96;
+const BREAK_SECS=15*60; // 15 min fixed break
+
+// phase: 'work' | 'break'
+let pomState={totalSecs:0,secs:0,running:false,done:false,interval:null,phase:'work'};
+
+function workDuration(){
+  return state.inPromo?(curTier().timer+5)*60:curTier().timer*60;
+}
+function initPom(){
+  clearInterval(pomState.interval);
+  pomState.totalSecs=workDuration();
+  pomState.secs=pomState.totalSecs;
+  pomState.running=false;
+  pomState.done=false;
+  pomState.phase='work';
+  hypeTriggered=false;
+  renderPom();
+}
+function fmt(s){return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function renderPom(){
+  const pct=pomState.totalSecs>0?pomState.secs/pomState.totalSecs:1;
+  const t=curTier();
+  const isBreak=pomState.phase==='break';
+  const isGreed=pomState.phase==='greed';
+  const ringEl=document.getElementById('ring-fg');
+  ringEl.style.strokeDashoffset=CIRC*(1-pct);
+  ringEl.style.stroke=isGreed?'#f43f5e':isBreak?'#34d399':t.color;
+  ringEl.style.strokeLinecap='round';
+  document.getElementById('pomo-time').textContent=fmt(pomState.secs);
+  document.getElementById('pomo-time').style.color=isGreed?'#fb7185':isBreak?'#6ee7b7':t.text;
+  const mins=Math.round(pomState.totalSecs/60);
+  if(isGreed){
+    document.getElementById('pomo-session-sub').textContent='GREED Session';
+    document.getElementById('pomo-phase-badge').textContent='No rest. More gains.';
+    document.getElementById('pomo-phase-badge').style.color='#f43f5e';
+  } else if(isBreak){
+    document.getElementById('pomo-session-sub').textContent='Break · 15 min';
+    document.getElementById('pomo-phase-badge').textContent='Rest up 🍵';
+    document.getElementById('pomo-phase-badge').style.color='#34d399';
+  } else {
+    document.getElementById('pomo-session-sub').textContent=t.name+' · '+mins+' min'+(state.inPromo?' 🔥 PROMO':'');
+    document.getElementById('pomo-phase-badge').textContent=pomState.running?'● focus':'● ready';
+    document.getElementById('pomo-phase-badge').style.color=pomState.running?t.color:'#475569';
+  }
+  document.getElementById('pomo-status-lbl').textContent=pomState.running?(isGreed?'● GREED':isBreak?'● BREAK':'● RUNNING'):'';
+  document.getElementById('pomo-status-lbl').style.color=isGreed?'#f43f5e':isBreak?'#34d399':t.color;
+  document.getElementById('btn-start').style.background=pomState.running?'transparent':(isGreed?'#881337':isBreak?'#047857':t.accent);
+  document.getElementById('btn-start').style.borderColor=isGreed?'#f43f5e':isBreak?'#34d399':t.color;
+  document.getElementById('btn-start').style.color=isGreed?'#fb7185':isBreak?'#6ee7b7':t.text;
+  document.getElementById('btn-start').textContent=pomState.running?'PAUSE':'START';
+}
+function showNormalPom(){
+  document.getElementById('pomo-svg-wrap').style.display='block';
+  document.getElementById('pomo-btns').style.display='flex';
+  document.getElementById('mission-wrap').style.display='none';
+  document.getElementById('promo-overlay').style.display='none';
+}
+function activateGreed(){
+  const greedBtn=document.getElementById('btn-greed');
+  if(greedBtn)greedBtn.style.display='none';
+  clearTimeout(greedTimeout);
+  // Play greed audio
+  const a=document.getElementById('greed-audio');
+  if(a){a.currentTime=0;a.play().catch(()=>{});}
+  // Switch break to greed work session (same duration remaining)
+  pomState.phase='greed';
+  pomState.isGreed=true;
+  renderPom();
+}
+
+let greedTimeout=null;
+function startBreak(){
+  playBell('start');
+  const isLongBreak=getTodayMins()>=8*60;
+  const t=curTier();
+  const baseBreak=t.breakMins?t.breakMins*60:BREAK_SECS;
+  pomState.phase='break';
+  pomState.isGreed=false;
+  pomState.totalSecs=isLongBreak?30*60:baseBreak;
+  pomState.secs=pomState.totalSecs;
+  pomState.done=false;
+  pomState.running=true;
+  // Show GREED button for 30 seconds
+  const greedBtn=document.getElementById('btn-greed');
+  if(greedBtn){
+    greedBtn.style.display='block';
+    clearTimeout(greedTimeout);
+    greedTimeout=setTimeout(()=>{greedBtn.style.display='none';},30000);
+  }
+  showNormalPom();
+  renderPom();
+  clearInterval(pomState.interval);
+  pomState.interval=setInterval(()=>{
+    pomState.secs--;
+    renderPom();
+    if(pomState.secs<=0){
+      clearInterval(pomState.interval);
+      pomState.running=false;
+      playBell('end');
+      showFlash('Break over — Back to work!',curTier().accent);
+      pomState.phase='work';
+      pomState.totalSecs=workDuration();
+      pomState.secs=pomState.totalSecs;
+      pomState.done=false;
+      hypeTriggered=false;
+      renderPom();
+    }
+  },1000);
+}
+function getTodayMins(){
+  // Total study minutes today: pomodoros + greed
+  const today=getTodayStr();
+  const pomoMins=(state.calendarData&&state.calendarData[today]||0)*curTier().timer;
+  const greedMins=(state.calendarData&&state.calendarData[today+'_greed']||0);
+  return pomoMins+greedMins;
+}
+
+function updateStreak(addMins){
+  const today=getTodayStr();
+  if(!state.calendarData)state.calendarData={};
+  // Accumulate pomo count for time calc
+  state.calendarData[today]=(state.calendarData[today]||0)+1;
+  const totalMins=getTodayMins();
+  const totalHours=totalMins/60;
+  const streakDay=state.streak||0;
+
+  // Check 4h threshold (fire streak)
+  const prev4h=(totalMins-addMins)/60<4&&totalHours>=4;
+  if(prev4h){
+    state.streak=(state.streak||0)+1;
+    state.lastStreakDate=today;
+    showFlash('🔥 Streak Day '+state.streak+'!','#b45309');
+    // Identity points at 4h
+    let normalPts=1;
+    if(streakDay>=21)normalPts=3;
+    else if(streakDay>=8)normalPts=2;
+    state.streakPoints=(state.streakPoints||0)+normalPts;
+    renderIdentity();
+  }
+
+  // Check 8h threshold (dragon identity bonus)
+  const prev8h=(totalMins-addMins)/60<8&&totalHours>=8;
+  if(prev8h){
+    let dragonPts=3;
+    if(streakDay>=21)dragonPts=5;
+    else if(streakDay>=8)dragonPts=4;
+    state.streakPoints=(state.streakPoints||0)+dragonPts;
+    renderIdentity();
+    showFlash('🐲 Masterclass Day!','#7e22ce');
+  }
+
+  renderStreak();
+  saveState();
+}
+function lightenColor(hex,amount){
+  // Lighten a hex color by mixing with white
+  const num=parseInt(hex.replace('#',''),16);
+  const r=Math.min(255,(num>>16)+amount);
+  const g=Math.min(255,((num>>8)&0xff)+amount);
+  const b=Math.min(255,(num&0xff)+amount);
+  return '#'+((r<<16)|(g<<8)|b).toString(16).padStart(6,'0');
+}
+function renderStreak(){
+  const el=document.getElementById('streak-display');
+  if(!el)return;
+  const s=state.streak||0;
+  const t=curTier();
+  const totalMins=getTodayMins();
+  const totalHours=totalMins/60;
+  const TARGET_FIRE=4*60;
+  const TARGET_DRAGON=8*60;
+  let emoji,days,pct,label,col;
+  if(totalHours>=8){
+    emoji='🐲';
+    days=s;
+    pct=100;
+    label='masterclass';
+    col=lightenColor(t.color,60);
+  } else if(totalHours>=4){
+    emoji='🔥';
+    days=s;
+    pct=Math.round((totalMins-TARGET_FIRE)/(TARGET_DRAGON-TARGET_FIRE)*100);
+    label='top perform';
+    col=t.color;
+  } else {
+    emoji='🔥';
+    days=s;
+    pct=Math.round(totalMins/TARGET_FIRE*100);
+    label='today';
+    col=t.color;
+  }
+  el.style.color=col;
+  el.textContent=emoji+' '+days+' day'+(days!==1?'s':'')+' · '+pct+'% '+label;
+}
+function onGreedComplete(){
+  // Award 16 LP fixed, track greed mins
+  const greedMins=Math.round(pomState.totalSecs/60);
+  state.greedMinsToday=(state.greedMinsToday||0)+greedMins;
+  // Also add to calendarData for daily avg
+  const today=getTodayStr();
+  if(!state.calendarData)state.calendarData={};
+  if(!state.calendarData[today+'_greed'])state.calendarData[today+'_greed']=0;
+  state.calendarData[today+'_greed']+=greedMins;
+  updateStreak(greedMins);
+  addLP(16,false);
+  showFlash('🔥 GREED +16 LP','#f43f5e');
+  saveState();applyTheme();renderLadder();
+  // Return to normal work session
+  pomState.phase='work';
+  pomState.totalSecs=workDuration();
+  pomState.secs=pomState.totalSecs;
+  pomState.done=false;
+  pomState.isGreed=false;
+  hypeTriggered=false;
+  renderPom();
+  showNormalPom();
+}
+
+function onWorkComplete(){
+  simulateBots();
+  updateStreak(curTier().timer);
+  if(state.inPromo){
+    state.inPromo=false;
+    const nextName=TIER_RANKS[Math.min(state.ti+1,TIER_RANKS.length-1)].name;
+    const nextAccent=TIER_RANKS[Math.min(state.ti+1,TIER_RANKS.length-1)].accent;
+    playPromotionAnimation(()=>{
+      promotePlayer();
+      saveState();renderLadder();
+    }, ()=>{
+      // Called after animation + applyTheme complete
+      showFlash('🎉 PROMOTED → '+curTier().name,curTier().accent);
+      startBreak();
+    });
+    return;
+  } else {
+    // Variable LP reward: base 20 + RNG (0/2/5)
+    const rngRoll=Math.random();
+    let bonus=0;
+    let isJackpot=false;
+    if(rngRoll<0.15){bonus=5;isJackpot=true;}
+    else if(rngRoll<0.50){bonus=2;}
+    const totalLP=20+bonus;
+    addLP(totalLP,false);
+    if(isJackpot){
+      const ja=document.getElementById('jackpot-audio');
+      if(ja){ja.currentTime=0;ja.play().catch(()=>{});}
+      showFlash('🎰 JACKPOT! +'+totalLP+' LP','#b45309');
+    } else {
+      showFlash('+'+totalLP+' LP — Rest time! 🍵','#047857');
+    }
+  }
+  saveState();applyTheme();renderLadder();
+  startBreak();
+}
+
+document.getElementById('btn-start').onclick=()=>{
+  if(pomState.done)return;
+  const wasRunning=pomState.running;
+  pomState.running=!pomState.running;
+  if(pomState.running){
+    if(!wasRunning&&pomState.phase==='work'&&pomState.secs===pomState.totalSecs) playRandomQuote();
+    clearInterval(pomState.interval);
+    pomState.interval=setInterval(()=>{
+      pomState.secs--;
+      renderPom();
+      if(pomState.phase==='work'&&pomState.secs===300) triggerHype();
+      if(pomState.phase==='break'&&pomState.secs===300) miniSimulate();
+      if(pomState.secs<=0){
+        clearInterval(pomState.interval);
+        pomState.running=false;
+        if(pomState.phase==='work') onWorkComplete();
+        else if(pomState.phase==='greed') onGreedComplete();
+        else{
+          playBell('end');
+          showFlash('Break over — Back to work!',curTier().accent);
+          pomState.phase='work';
+          pomState.totalSecs=workDuration();
+          pomState.secs=pomState.totalSecs;
+          pomState.done=false;
+          renderPom();
+        }
+      }
+    },1000);
+  } else {clearInterval(pomState.interval);}
+  renderPom();
+};
+document.getElementById('btn-new').onclick=()=>{initPom();showNormalPom();};
+
+// ══════════════════════════════════════════════
+// LP / RANK LOGIC
+// ══════════════════════════════════════════════
+function addLP(amt,save=true){
+  const t=curTier();
+  if(t.isChallenger||t.isGM){
+    state.gmTotalLP=(state.gmTotalLP||0)+amt;
+    if(save){saveState();applyTheme();renderLadder();}
+    return;
+  }
+  state.lp+=amt;
+  if(state.lp>=100){
+    const isTopDiv=state.di===curTier().maxDiv-1;
+    if(isTopDiv){
+      state.lp=100;
+      state.inPromo=true;
+      document.getElementById('promo-banner').style.display='block';
+      initPom();
+      showFlash('⚔️ PROMO SERIES!','#92400e');
+    } else {
+      state.lp=state.lp-100;
+      state.di++;
+      showFlash('✅ '+curTier().name+' '+DIV_LABELS[state.di],curTier().accent);
+    }
+  }
+  if(save){saveState();applyTheme();renderLadder();}
+}
+
+function playPromotionAnimation(callback, onComplete){
+  const icon=document.getElementById('rank-icon');
+  if(!icon){callback();return;}
+  // Play audio
+  const a=document.getElementById('promoted-audio');
+  if(a){a.currentTime=0;a.play().catch(()=>{});}
+  // Stop pulse-glow
+  icon.style.animation='none';
+  icon.style.transform='';
+  icon.style.opacity='1';
+  void icon.offsetWidth;
+  // Phase 1: shake
+  let shakeCount=0;
+  const shakeInterval=setInterval(()=>{
+    const x=(shakeCount%2===0?-5:5);
+    const r=(shakeCount%2===0?-2:2);
+    icon.style.transform='translate('+x+'px,0) rotate('+r+'deg)';
+    shakeCount++;
+    if(shakeCount>8){
+      clearInterval(shakeInterval);
+      icon.style.transform='';
+      // Phase 2: shrink + fade out
+      icon.style.transition='transform 0.35s ease, opacity 0.35s ease';
+      icon.style.transform='scale(0)';
+      icon.style.opacity='0';
+      setTimeout(()=>{
+        // Icon is now invisible — safe to swap src + update rank
+        icon.style.transition='none';
+        icon.style.transform='scale(0)';
+        icon.style.opacity='0';
+        void icon.offsetWidth;
+        callback(); // updates rank state AND icon.src via applyTheme inside
+        // Wait one frame for new src to load, then grow
+        icon.onload=()=>{
+          icon.onload=null;
+          void icon.offsetWidth;
+          icon.style.transition='transform 0.5s cubic-bezier(.17,.67,.35,1.3), opacity 0.3s ease';
+          icon.style.transform='scale(1)';
+          icon.style.opacity='1';
+          setTimeout(()=>{
+            icon.style.transition='';
+            icon.style.transform='';
+            icon.style.opacity='';
+            applyTheme();
+            if(onComplete) onComplete();
+          },500);
+        };
+        // Fallback if already cached
+        if(icon.complete) icon.onload();
+      },350);
+    }
+  },80);
+}
+
+function promotePlayer(){
+  if(state.ti<TIER_RANKS.length-1){
+    state.ti++;state.di=0;state.lp=0;state.inPromo=false;
+    state.gmTotalLP=state.ti>=8?0:state.gmTotalLP;
+    document.getElementById('promo-banner').style.display='none';
+  }
+}
+
+function promoFail(){
+  state.lp=75;state.inPromo=false;
+  document.getElementById('promo-banner').style.display='none';
+  showFlash('❌ PROMO FAILED — −25 LP','#7f1d1d');
+  initPom();showNormalPom();
+  saveState();applyTheme();renderLadder();
+}
+
+function loseLP(amt){
+  const real=Math.round(amt*(isHighElo()?1.3:1));
+  const t=curTier();
+  if(t.isGM||t.isChallenger){
+    state.gmTotalLP=Math.max(0,(state.gmTotalLP||0)-real);
+    saveState();applyTheme();renderLadder();
+    return real;
+  }
+  if(state.inPromo){promoFail();return real;}
+  state.lp-=real;
+  if(state.lp<0){
+    if(state.di>0){state.di--;state.lp=Math.max(0,75+state.lp);showFlash('⬇ Division dropped','#b91c1c');}
+    else if(state.ti>0){state.ti--;state.di=curTier().maxDiv-1;state.lp=Math.max(0,75+state.lp);showFlash('💀 DEMOTED → '+curTier().name,'#991b1b');}
+    else{state.lp=0;}
+  }
+  saveState();applyTheme();renderLadder();
+  return real;
+}
+
+// ══════════════════════════════════════════════
+// LADDER RENDER
+// ══════════════════════════════════════════════
+function renderLadder(){
+  const list=document.getElementById('ladder-list');
+  const ti=state.viewTi,di=state.viewDi;
+  const t=TIER_RANKS[ti];
+  const r=curTier();
+  const entries=ladderEntries(ti,di);
+
+  if(entries.length===0){
+    list.innerHTML=`<div style="padding:20px;text-align:center;font-size:11px;color:#475569;letter-spacing:2px;font-family:'Share Tech Mono',monospace">— EMPTY —<br><span style="font-size:10px;opacity:.5">No players yet</span></div>`;
+    document.getElementById('ladder-tier-label').textContent=t.name+(t.maxDiv>1?' '+DIV_LABELS[di]:'');
+    document.getElementById('ladder-tier-label').style.color=t.color;
+    return;
+  }
+
+  list.innerHTML='';
+  entries.forEach((p,i)=>{
+    const row=document.createElement('div');
+    row.className='lrow'+(p.isMe?' me':'');
+    if(p.isMe){row.style.background=r.accent+'44';row.style.borderColor=r.accent;row.setAttribute('data-me','1');}
+    row.innerHTML=`<span class="lpos" style="color:${t.color}">${i+1}</span>
+      <span class="lflag">${p.flag||''}</span>
+      <span class="lname" style="color:${p.isMe?r.text:'#94a3b8'};font-weight:${p.isMe?700:400}">${p.name}</span>
+      <span class="llp" style="color:${t.color}">${p.lp} LP</span>`;
+    list.appendChild(row);
+  });
+  if(ti===state.ti&&di===state.di){
+    const me=list.querySelector('[data-me]');
+    if(me)setTimeout(()=>me.scrollIntoView({block:'center',behavior:'smooth'}),80);
+  }
+  const divText=t.maxDiv>1?' '+DIV_LABELS[di]:'';
+  document.getElementById('ladder-tier-label').textContent=t.name+divText;
+  document.getElementById('ladder-tier-label').style.color=t.color;
+}
+
+// ══════════════════════════════════════════════
+// LADDER NAV
+// ══════════════════════════════════════════════
+const allDivs=[];
+TIER_RANKS.forEach((t,ti)=>{for(let d=0;d<t.maxDiv;d++)allDivs.push({ti,di:d});});
+let navIdx=0;
+function updateNavIdx(){navIdx=Math.max(0,allDivs.findIndex(x=>x.ti===state.viewTi&&x.di===state.viewDi));}
+function navTo(idx){
+  idx=Math.max(0,Math.min(allDivs.length-1,idx));
+  navIdx=idx;state.viewTi=allDivs[idx].ti;state.viewDi=allDivs[idx].di;
+  renderLadder();
+}
+document.getElementById('btn-nav-prev').onclick=()=>{updateNavIdx();navTo(navIdx-1);};
+document.getElementById('btn-nav-next').onclick=()=>{updateNavIdx();navTo(navIdx+1);};
+document.getElementById('btn-nav-me').onclick=()=>{state.viewTi=state.ti;state.viewDi=state.di;updateNavIdx();renderLadder();};
+
+// ══════════════════════════════════════════════
+// RELAPSE
+// ══════════════════════════════════════════════
+let relapseTimer=null;
+function setRelapseMsg(txt){
+  document.getElementById('relapse-msg').textContent=txt;
+  clearTimeout(relapseTimer);
+  relapseTimer=setTimeout(()=>{document.getElementById('relapse-msg').textContent=''},3500);
+}
+function shake(el){el.classList.remove('shake');void el.offsetWidth;el.classList.add('shake');setTimeout(()=>el.classList.remove('shake'),600);}
+document.getElementById('btn-distracted').onclick=function(){
+  shake(this);
+  const real=loseLP(15);
+  setRelapseMsg(`−${real} LP${isHighElo()?' (×1.3)':''} · 10 pass you 😤`);
+  playLaugh();initPom();showNormalPom();
+};
+document.getElementById('btn-phone').onclick=function(){
+  shake(this);
+  const real=loseLP(20);
+  setRelapseMsg(`−${real} LP${isHighElo()?' (×1.3)':''} · Put the phone down 📵`);
+  playLaugh();initPom();showNormalPom();
+};
+document.getElementById('btn-quit').onclick=function(){
+  shake(this);
+  const real=loseLP(35);
+  setRelapseMsg(`−${real} LP${isHighElo()?' (×1.3)':''} · You quit. Get back up. 💀`);
+  playLaugh();initPom();showNormalPom();
+};
+
+
+// ══════════════════════════════════════════════
+// THEME
+// ══════════════════════════════════════════════
+function applyTheme(){
+  const t=curTier();
+  document.getElementById('left').style.background=t.bg;
+  document.getElementById('left-glow').style.background=`radial-gradient(ellipse at 50% 25%,${t.accent}44,transparent 65%)`;
+  // Rank 1 special icon
+  const isRank1=state.ti===9&&myGlobalPos()===1;
+  const iconEl=document.getElementById('rank-icon');
+  iconEl.src=isRank1?'Rank1.png':t.icon;
+  iconEl.style.filter=`drop-shadow(0 0 18px ${t.accent})`;
+  iconEl.style.animation='pulse-glow 2.5s ease infinite';
+  document.getElementById('rank-name').textContent=t.name;
+  document.getElementById('rank-name').style.color=t.text;
+  document.getElementById('rank-tier').textContent=divLabel();
+  document.getElementById('rank-tier').style.color=t.color;
+  const isGMC=t.isGM||t.isChallenger;
+  document.getElementById('lp-area').style.display=isGMC?'none':'block';
+  document.getElementById('gm-lp-area').style.display=isGMC?'block':'none';
+  if(isGMC){
+    const gmlp=state.gmTotalLP||0;
+    document.getElementById('gm-lp-num').textContent=gmlp;
+    document.getElementById('gm-lp-fill').style.width=Math.min(100,(gmlp/1200*100))+'%';
+  } else {
+    document.getElementById('lp-val').textContent=state.lp+' LP';
+    document.getElementById('lp-val').style.color=t.color;
+    document.getElementById('lp-fill').style.width=state.lp+'%';
+    document.getElementById('lp-fill').style.background=t.accent;
+    document.getElementById('lp-fill').style.boxShadow=`0 0 8px ${t.accent}`;
+  }
+  document.getElementById('promo-banner').style.display=state.inPromo?'block':'none';
+  document.getElementById('my-pos').textContent='#'+myGlobalPos();
+  document.getElementById('my-pos').style.color=t.text;
+  document.getElementById('pomo-glow').style.background=`radial-gradient(ellipse at 50% 50%,${t.accent}22,transparent 65%)`;
+  document.getElementById('pomo-dot').style.background=t.color;
+  document.getElementById('pomo-dot').style.boxShadow=`0 0 6px ${t.color}`;
+  document.getElementById('highelo-badge').style.display=isHighElo()?'block':'none';
+
+  renderPom();
+  renderStreak();
+  renderIdentity();
+}
+
+// ══════════════════════════════════════════════
+// FLASH
+// ══════════════════════════════════════════════
+let flashTimer=null;
+function showFlash(msg,bg){
+  const el=document.getElementById('flash');
+  el.textContent=msg;el.style.background=bg||curTier().accent;el.style.color='#fff';el.style.display='block';
+  clearTimeout(flashTimer);
+  flashTimer=setTimeout(()=>{el.style.display='none'},2600);
+}
+
+
+
+let hypeTriggered=false;
+
+function miniSimulate(){
+  // Give or take 6 LP from normal bots and top-10 favorites randomly
+  const r=rng(Date.now()%999983);
+  for(let ti=0;ti<=7;ti++){
+    const tier=TIER_RANKS[ti];
+    for(let d=0;d<tier.maxDiv;d++){
+      state.playerDB[ti][d].forEach(p=>{
+        // Only affect normal bots (skill<=10, no superSkill) and favorites
+        if(p.superSkill&&p.superSkill>0.76) return; // skip special characters
+        const gain=r()>0.5?6:-6;
+        p.lp=Math.max(0,Math.min(99,p.lp+gain));
+      });
+    }
+  }
+  renderLadder();
+}
+
+function triggerHype(){
+  if(hypeTriggered)return;
+  hypeTriggered=true;
+  // hype audio removed by user
+  const timerEl=document.getElementById('pomo-time');
+  if(timerEl){
+    timerEl.classList.add('timer-shaking');
+    setTimeout(()=>timerEl.classList.remove('timer-shaking'),5000);
+  }
+  miniSimulate();
+}
+function playLaugh(){
+  const a=document.getElementById('laugh-audio');
+  if(!a)return;
+  a.currentTime=0;a.play().catch(()=>{});
+}
+
+function playRandomQuote(){
+  const n=Math.floor(Math.random()*6)+1;
+  const a=document.getElementById('quote-audio');
+  if(!a)return;
+  a.src='quote'+n+'.m4a';
+  a.currentTime=0;a.play().catch(()=>{});
+}
+
+// ══════════════════════════════════════════════
+// SEASON SYSTEM
+// ══════════════════════════════════════════════
+function getSeasonEnd(){
+  const now=new Date();
+  const y=now.getFullYear();
+  const m=now.getMonth(); // 0-indexed
+  // Pair months: 0-1, 2-3, 4-5, 6-7, 8-9, 10-11
+  const pairEnd=m%2===0?m+1:m; // end month of current pair (0-indexed)
+  // Last day of pairEnd month
+  return new Date(y, pairEnd+1, 0, 23, 59, 59);
+}
+
+function getDaysLeft(){
+  const now=new Date();
+  const end=getSeasonEnd();
+  const diff=end-now;
+  return Math.max(0,Math.ceil(diff/(1000*60*60*24)));
+}
+
+function getSeasonNumber(){
+  const now=new Date();
+  const m=now.getMonth();
+  return Math.floor(m/2)+1; // 1-6
+}
+
+function updateSeasonCounter(){
+  const days=getDaysLeft();
+  const sn=getSeasonNumber();
+  const el=document.getElementById('season-counter');
+  if(days===0){
+    el.textContent='⚡ SEASON RESET';
+    el.style.color='#ef4444';
+  } else {
+    el.textContent=`S${sn} · Next reset in ${days}d`;
+    el.style.color='#475569';
+  }
+}
+
+function applySeasonReset(){
+  // Check if reset needed
+  const lastReset=state.lastSeasonReset||0;
+  const seasonEnd=getSeasonEnd();
+  const now=Date.now();
+  // If season has ended and we haven't reset yet this season
+  const seasonKey=getSeasonNumber()+'-'+new Date().getFullYear();
+  if(state.lastSeasonKey===seasonKey) return; // already reset this season
+
+  const daysLeft=getDaysLeft();
+  if(daysLeft>0) return; // season not over yet
+
+  // RESET
+  state.lastSeasonKey=seasonKey;
+  showFlash('⚡ SEASON RESET','#b91c1c');
+
+  // Reset bots
+  for(let ti=0;ti<TIER_RANKS.length;ti++){
+    const tier=TIER_RANKS[ti];
+    for(let d=0;d<tier.maxDiv;d++){
+      state.playerDB[ti][d].forEach(p=>{
+        if(ti>=8){
+          // GM + Challenger → Diamond I (ti=6, di=2)
+          p.ti=6;p.di=2;p.lp=0;
+          state.playerDB[6][2].push(p);
+          state.playerDB[ti][d]=state.playerDB[ti][d].filter(x=>x.id!==p.id);
+        } else if(ti===7){
+          // Master → Diamond I or II
+          const newDi=p.lp>=50?2:1;
+          p.ti=6;p.di=newDi;p.lp=Math.max(0,p.lp-30);
+          state.playerDB[6][newDi].push(p);
+          state.playerDB[ti][d]=state.playerDB[ti][d].filter(x=>x.id!==p.id);
+        } else if(ti===6){
+          // Diamond → lose 25-40 LP
+          p.lp=Math.max(0,p.lp-Math.floor(25+Math.random()*15));
+        } else if(ti>=4){
+          // Plat/Emerald → lose 10-25 LP
+          p.lp=Math.max(0,p.lp-Math.floor(10+Math.random()*15));
+        } else {
+          // Gold and below → lose 5-15 LP
+          p.lp=Math.max(0,p.lp-Math.floor(5+Math.random()*10));
+        }
+      });
+    }
+  }
+
+  // Reset player too
+  if(state.ti>=8){
+    state.ti=6;state.di=2;state.lp=0;state.gmTotalLP=0;
+  } else if(state.ti===7){
+    state.ti=6;state.di=state.lp>=50?2:1;state.lp=Math.max(0,state.lp-30);
+  } else if(state.ti===6){
+    state.lp=Math.max(0,state.lp-Math.floor(25+Math.random()*15));
+  } else if(state.ti>=4){
+    state.lp=Math.max(0,state.lp-Math.floor(10+Math.random()*15));
+  } else {
+    state.lp=Math.max(0,state.lp-Math.floor(5+Math.random()*10));
+  }
+  state.inPromo=false;
+
+  saveState();
+  applyTheme();
+  renderLadder();
+}
+
+// ── BELL (Web Audio API) ──
+function playBell(type){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const osc=ctx.createOscillator();
+    const gain=ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    if(type==='start'){
+      // Two soft ascending tones
+      osc.frequency.setValueAtTime(523,ctx.currentTime);
+      osc.frequency.setValueAtTime(659,ctx.currentTime+0.15);
+    } else {
+      // One gentle descending tone
+      osc.frequency.setValueAtTime(659,ctx.currentTime);
+      osc.frequency.setValueAtTime(523,ctx.currentTime+0.2);
+    }
+    osc.type='sine';
+    gain.gain.setValueAtTime(0.3,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.8);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime+0.8);
+  }catch(e){}
+}
+
+// ══════════════════════════════════════════════
+// DAILY CHECK (runs on page open)
+// ══════════════════════════════════════════════
+function getTodayStr(){
+  const d=new Date();
+  return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+}
+function dailyCheck(){
+  const today=getTodayStr();
+  const last=state.lastOpenDate||today;
+  const todayD=new Date(today);
+  const lastD=new Date(last);
+  const diffDays=Math.floor((todayD-lastD)/(1000*60*60*24));
+
+  if(diffDays>0){
+    // Bot daily progress: +15 LP per day (max 7 days)
+    const days=Math.min(diffDays,7);
+    for(let d=0;d<days;d++){
+      for(let ti=0;ti<=8;ti++){
+        const tier=TIER_RANKS[ti];
+        for(let div=0;div<tier.maxDiv;div++){
+          const division=state.playerDB[ti][div];
+          for(let i=division.length-1;i>=0;i--){
+            const p=division[i];
+            p.lp=(p.lp||0)+35;
+            if(p.lp>=100){
+              p.lp=p.lp-100;
+              if(ti<=7&&div<2){p.di=div+1;state.playerDB[ti][div+1].push(p);division.splice(i,1);}
+              else if(ti<=7&&div===2){p.ti=ti+1;p.di=0;state.playerDB[ti+1][0].push(p);division.splice(i,1);}
+            }
+          }
+        }
+      }
+      // Recalculate Challenger top 10
+      const allGMC=[...state.playerDB[8][0],...state.playerDB[9][0]];
+      if(allGMC.length>0){
+        allGMC.sort((a,b)=>b.lp-a.lp);
+        state.playerDB[9][0]=allGMC.slice(0,10).map(p=>({...p,ti:9,di:0}));
+        const existingGM=state.playerDB[8][0].filter(p=>!allGMC.find(x=>x.id===p.id));
+        state.playerDB[8][0]=[...existingGM,...allGMC.slice(10).map(p=>({...p,ti:8,di:0}))];
+      }
+    }
+    // Auto penalty: -35 LP per missed day (accumulative), check <5 pomodoros
+    const todayHours=getTodayMins()/60;
+    const missedDays=diffDays===1&&todayHours<4?1:diffDays>1?Math.min(diffDays,7):0;
+    if(missedDays>0){
+      const totalLoss=missedDays*35;
+      for(let md=0;md<missedDays;md++) loseLP(35);
+      playLaugh();
+      initPom();
+      state.streak=0;
+      state.streakPoints=Math.max(0,(state.streakPoints||0)-20);
+      showFlash('💀 −'+totalLoss+' LP ('+missedDays+'d missed)','#991b1b');
+    }
+  }
+  state.lastOpenDate=today;
+  saveState();
+  checkNewChallengers();
+}
+
+// ══════════════════════════════════════════════
+// CALENDAR
+// ══════════════════════════════════════════════
+const MONTH_NAMES=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAY_LABELS=['Mo','Tu','We','Th','Fr','Sa','Su'];
+let calViewYear=new Date().getFullYear();
+let calViewMonth=new Date().getMonth();
+let calOpen=false;
+
+function toggleCalendar(){
+  calOpen=!calOpen;
+  calViewYear=new Date().getFullYear();
+  calViewMonth=new Date().getMonth();
+  document.getElementById('cal-overlay').style.display=calOpen?'block':'none';
+  if(calOpen)renderCalendar();
+}
+
+function calPrev(){
+  calViewMonth--;
+  if(calViewMonth<0){calViewMonth=11;calViewYear--;}
+  renderCalendar();
+}
+function calNext(){
+  calViewMonth++;
+  if(calViewMonth>11){calViewMonth=0;calViewYear++;}
+  renderCalendar();
+}
+
+function renderCalendar(){
+  document.getElementById('cal-month-label').textContent=MONTH_NAMES[calViewMonth]+' '+calViewYear;
+  const grid=document.getElementById('cal-grid');
+  grid.innerHTML='';
+
+  // Day headers
+  DAY_LABELS.forEach(d=>{
+    const el=document.createElement('div');
+    el.textContent=d;
+    el.style.cssText='font-size:9px;color:#475569;font-family:Share Tech Mono,monospace;letter-spacing:1px;padding:2px 0';
+    grid.appendChild(el);
+  });
+
+  // First day of month (0=Sun..6=Sat → convert to Mon-first)
+  const firstDay=new Date(calViewYear,calViewMonth,1).getDay();
+  const offset=(firstDay===0?6:firstDay-1);
+  const daysInMonth=new Date(calViewYear,calViewMonth+1,0).getDate();
+  const today=new Date();
+
+  // Empty cells before first day
+  for(let i=0;i<offset;i++){
+    grid.appendChild(document.createElement('div'));
+  }
+
+  // Day cells
+  // ── Stats ──
+  function pomosToMins(dateStr){
+    // Use actual rank timer for that day's pomos
+    const p=(state.calendarData&&state.calendarData[dateStr])||0;
+    const greed=(state.calendarData&&state.calendarData[dateStr+'_greed'])||0;
+    return p*curTier().timer+greed;
+  }
+  function fmtMins(m){
+    if(m<=0)return'—';
+    const h=Math.floor(m/60);
+    const mn=m%60;
+    return h>0?(h+'h '+(mn>0?mn+'m':'')):(mn+'m');
+  }
+  // Daily avg last 3 weeks (21 days)
+  const now2=new Date();
+  let totalMins3w=0;
+  let activeDays=0;
+  for(let i=1;i<=21;i++){
+    const d=new Date(now2);
+    d.setDate(now2.getDate()-i);
+    const ds=d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();
+    const m=pomosToMins(ds);
+    if(m>0){totalMins3w+=m;activeDays++;}
+  }
+  const avgMins=activeDays>0?Math.round(totalMins3w/activeDays):0;
+  const avgEl=document.getElementById('cal-daily-avg');
+  if(avgEl)avgEl.textContent=fmtMins(avgMins);
+
+  for(let day=1;day<=daysInMonth;day++){
+    const cell=document.createElement('div');
+    const dateStr=calViewYear+'-'+(calViewMonth+1)+'-'+day;
+    const pomos=(state.calendarData&&state.calendarData[dateStr])||0;
+    const isToday=today.getFullYear()===calViewYear&&today.getMonth()===calViewMonth&&today.getDate()===day;
+    const isFuture=new Date(calViewYear,calViewMonth,day)>today;
+
+    const dayMins=pomosToMins(dateStr);
+    const dayHours=dayMins/60;
+    if(dayHours>=8){
+      cell.textContent='🐲';
+      cell.style.cssText='font-size:14px;line-height:1.6;cursor:default';
+    } else if(dayHours>=4){
+      cell.textContent='🔥';
+      cell.style.cssText='font-size:14px;line-height:1.6;cursor:default';
+    } else {
+      cell.textContent=day;
+      cell.style.cssText='font-size:11px;font-family:Share Tech Mono,monospace;line-height:1.8;color:'+(isFuture?'#2a2a3a':isToday?curTier().color:'#475569');
+    }
+    grid.appendChild(cell);
+  }
+}
+
+// ══════════════════════════════════════════════
+// ══════════════════════════════════════════════
+// CHALLENGER TICKER
+// ══════════════════════════════════════════════
+function checkNewChallengers(){
+  const current=state.playerDB[9][0].map(p=>p.name);
+  const known=state.knownChallengers||[];
+  const newOnes=current.filter(n=>!known.includes(n));
+  state.knownChallengers=current;
+  if(newOnes.length===0)return;
+  // Build ticker text
+  const separator=' · · · ';
+  const text=newOnes.map(n=>'⚡ '+n+' JUST REACHED CHALLENGER').join(separator);
+  const ticker=document.getElementById('challenger-ticker');
+  const inner=document.getElementById('challenger-ticker-inner');
+  if(!ticker||!inner)return;
+  inner.textContent=text+separator;
+  ticker.style.display='flex';
+  // Duration: ~80px per second, slow scroll
+  const totalWidth=inner.offsetWidth||text.length*9;
+  const duration=Math.max(6, totalWidth/120);
+  inner.style.animation=`ticker-scroll ${duration}s linear forwards`;
+  inner.addEventListener('animationend',()=>{
+    ticker.style.display='none';
+    inner.style.animation='';
+  },{once:true});
+}
+
+// ══════════════════════════════════════════════
+// IDENTITY SYSTEM
+// ══════════════════════════════════════════════
+const IDENTITY_LEVELS=[
+  {pts:0,   title:'Nobody',      phrase:'Start your streak.',               car:'civic.jpg'},
+  {pts:7,   title:'Consistent',  phrase:'You show up. That matters.',       car:'corolla.jpg'},
+  {pts:20,  title:'Disciplined', phrase:'Discipline over motivation.',      car:'versa.jpg'},
+  {pts:45,  title:'Unstoppable', phrase:'They cant keep up with you.',      car:'mazda.jpg'},
+  {pts:90,  title:'Elite',       phrase:'Months of proof. Zero excuses.',   car:'bmw.png'},
+  {pts:150, title:'Machine',     phrase:'You are built different.',         car:'porsche base.jpg'},
+  {pts:250, title:'OVERDRIVE',   phrase:'You became the standard.',         car:'porsche 911.jpg'},
+];
+
+function getIdentityLevel(pts){
+  let level=IDENTITY_LEVELS[0];
+  for(const l of IDENTITY_LEVELS){if(pts>=l.pts)level=l;}
+  return level;
+}
+
+function getNextLevel(pts){
+  for(const l of IDENTITY_LEVELS){if(pts<l.pts)return l;}
+  return null;
+}
+
+function renderIdentity(){
+  const pts=state.streakPoints||0;
+  const level=getIdentityLevel(pts);
+  const next=getNextLevel(pts);
+  // Apply rank colors to identity panel
+  const t=curTier();
+  const panel=document.getElementById('identity-panel');
+  if(panel){
+    panel.style.setProperty('--id-text', t.text);
+    panel.style.setProperty('--id-accent', t.color);
+    panel.style.setProperty('--id-dim', t.accent);
+    panel.style.setProperty('--id-glow', t.accent+'22');
+    panel.style.background=t.bg;
+    panel.style.borderColor=t.glow;
+  }
+  document.getElementById('identity-title').textContent=level.title;
+  document.getElementById('identity-phrase').textContent=level.phrase;
+  // Show X/Y format, no spoiler of next title
+  if(next){
+    document.getElementById('identity-pts-label').textContent=pts+'/'+next.pts;
+    document.getElementById('identity-next-label').textContent='';
+  } else {
+    document.getElementById('identity-pts-label').textContent=pts+' pts';
+    document.getElementById('identity-next-label').textContent='';
+  }
+  // Update car background image
+  const carEl=document.getElementById('identity-car-bg');
+  if(carEl&&level.car){
+    if(carEl.src!==location.origin+'/'+level.car&&carEl.getAttribute('src')!==level.car){
+      carEl.style.opacity='0';
+      carEl.src=level.car;
+      carEl.onload=()=>{carEl.style.opacity='1';};
+    }
+  }
+  if(level.title==='OVERDRIVE'||!next){
+    document.getElementById('identity-progress-wrap').style.display='none';
+    document.getElementById('identity-title').style.color='#a855f7';
+  } else {
+    document.getElementById('identity-progress-wrap').style.display='block';
+    document.getElementById('identity-title').style.color='#e9d5ff';
+    document.getElementById('identity-next-label').textContent='';
+    const prevLevel=getIdentityLevel(pts);
+    const prevPts=prevLevel.pts;
+    const pct=next?Math.min(100,Math.round((pts-prevPts)/(next.pts-prevPts)*100)):100;
+    document.getElementById('identity-bar-fill').style.width=pct+'%';
+  }
+}
+
+
+
+// INIT
+// ══════════════════════════════════════════════
+state.viewTi=state.ti;
+state.viewDi=state.di;
+if(state.streak===undefined)state.streak=0;
+if(state.lastStreakDate===undefined)state.lastStreakDate='';
+if(state.lastOpenDate===undefined)state.lastOpenDate='';
+if(state.calendarData===undefined)state.calendarData={};
+if(state.streakPoints===undefined)state.streakPoints=0;
+if(state.knownChallengers===undefined)state.knownChallengers=[];
+applySeasonReset();
+dailyCheck();
+applyTheme();
+initPom();
+showNormalPom();
+renderLadder();
+renderStreak();
+renderIdentity();
+updateSeasonCounter();
+setInterval(updateSeasonCounter,60000);
+</script>
+
+</body>
+</html>
